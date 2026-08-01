@@ -387,6 +387,15 @@ const TH = {
   sleep:{ ideal: 7, coef: 5, cap: 20 },
   busy: { coef: 2, cap: 15 },
   mail: { coef: 1, cap: 5 },
+  // 気圧ストレスによるレベルの下限（docs/design.md §4.2.1 の解決 / 2026-08-01 決定）
+  // 予算だけで決めると、気象因子しか無い日は引ける点が最大60で予算の下限が40になり、
+  // 台風でもレベル3止まりになる。「今日は気圧のせい」が成立しなくなるため下限を設ける
+  stressFloor: [
+    { minStress: 90, level: 5 },
+    { minStress: 75, level: 4 },
+    { minStress: 55, level: 3 },
+    { minStress: 35, level: 2 },
+  ],
 };
 
 /* ============================================================
@@ -553,9 +562,18 @@ function energyBudget(sc) {
   return { budget, factors, stress: st, di };
 }
 
-// 体力予算を省エネレベルへ写像する
-function toLevel(budget) {
-  return LEVELS.find(l => budget >= l.min) || LEVELS[LEVELS.length - 1];
+// 気圧ストレスが単独で要求するレベルの下限（docs/design.md §4.2.1）
+function stressFloorLevel(stressScore) {
+  const hit = TH.stressFloor.find(f => stressScore >= f.minStress);
+  return hit ? hit.level : 1;
+}
+
+// 体力予算と気圧ストレスから省エネレベルを決める。
+// 「予算由来のレベル」と「ストレス由来の下限」の深い方を採る（下限であって固定ではない）
+function toLevel(budget, stressScore = 0) {
+  const fromBudget = LEVELS.find(l => budget >= l.min) || LEVELS[LEVELS.length - 1];
+  const floor = stressFloorLevel(stressScore);
+  return LEVELS.find(l => l.level === Math.max(fromBudget.level, floor)) || fromBudget;
 }
 
 // 提案を選ぶ。そのレベル以下の負荷のものだけ、最大3件。レベル5は1件のみ
@@ -577,7 +595,7 @@ let current = SCENARIOS[0];
 function render() {
   const sc = current;
   const { budget, factors, stress, di } = energyBudget(sc);
-  const lv = toLevel(budget);
+  const lv = toLevel(budget, stress.score);
 
   // レベルに応じてアクセント色を差し替える（トランジションで緩やかに変化）
   // ライト環境では暗い差し色がコントラストを強めすぎるため、明度を反転させる
@@ -699,7 +717,8 @@ $("btn-send").addEventListener("click", async () => {
   $("reply-note").textContent = "";
 
   // 現在のシナリオの省エネレベルを添えて送る（応答の文脈に使われる）
-  const level = toLevel(energyBudget(current).budget).level;
+  const eb = energyBudget(current);
+  const level = toLevel(eb.budget, eb.stress.score).level;
   const r = await api("/reflection", "POST", { text, level });
 
   let reply, note;

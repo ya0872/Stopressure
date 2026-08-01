@@ -74,9 +74,10 @@ def list_models(api_key: str) -> list[str]:
 def generate(api_key: str, model: str, prompt: str, system: str | None = None) -> GenerateResult:
     """テキストを生成する。
 
-    注意: この関数に渡してよいのは非機微な入力のみ。夜の吐き出し内容は
-    docs/design.md §3.3 によりローカルLLM固定であり、ここを経由させてはならない。
-    経路の担保は routers/generate.py の用途ホワイトリストで行う。
+    注意: この関数を呼んだ内容は Google へ送信される。版0.3 で夜の吐き出しも Gemini を
+    使う構成に変わったが（docs/design.md §3.3）、自由文を渡してよいのは routers/reflection.py
+    だけである。routers/generate.py は用途ホワイトリストで自由文を弾いており、
+    「ユーザーの言葉が外部へ出る経路」を1箇所に閉じている。この構造を崩さないこと。
     """
     client = _client(api_key)
     try:

@@ -5,14 +5,22 @@ APIキーは書き込み専用として扱う。保存はできるが、平文�
 """
 from __future__ import annotations
 
+import re
+
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from .. import settings_store as store
 from ..crypto import mask
-from ..services import gemini
+from ..services import gemini, google_client, google_oauth
 
 router = APIRouter(prefix="/settings", tags=["settings"])
+
+# Google の client_id は「数字-英小数字.apps.googleusercontent.com」の形をとる。
+# 手入力で空白や記号が混入すると、Googleは認可の入口で 401 invalid_client を返し、
+# 「クライアントが見つからない」としか言わないため原因が分かりにくい。
+# 保存の時点で弾いて、どこが変なのかをこちら側で伝える
+_CLIENT_ID_RE = re.compile(r"^\d+-[a-z0-9]+\.apps\.googleusercontent\.com$")
 
 
 class GeminiStatus(BaseModel):
@@ -83,6 +91,142 @@ def get_available_models() -> list[str]:
         raise HTTPException(status_code=503, detail=str(e)) from e
     except gemini.GeminiCallFailed as e:
         raise HTTPException(status_code=502, detail=f"モデル一覧の取得に失敗しました: {e}") from e
+
+
+class GoogleStatus(BaseModel):
+    """Google連携の状態。client_secret もトークンも含めない。"""
+    configured: bool = Field(description="OAuthクライアントが登録済みか")
+    linked: bool = Field(description="Googleアカウントと連携済みか")
+    client_id: str | None = Field(default=None, description="client_id は認可URLに載るため平文で返す")
+    scopes: list[str] = Field(description="要求する権限。すべて読み取り専用")
+    linked_at: str | None = Field(default=None, description="連携した日時(UTC)")
+    use_context: bool = Field(description="カレンダー等を体力予算に反映するか")
+    login_url: str = Field(description="連携を開始するURL")
+
+
+class GoogleUpdate(BaseModel):
+    # 片方だけの更新を許す。既存値は維持される
+    client_id: str | None = Field(
+        default=None, min_length=10, max_length=400,
+        description="例: 123456789012-abcdefghijklmnop.apps.googleusercontent.com",
+    )
+    client_secret: str | None = Field(default=None, min_length=6, max_length=400)
+    use_context: bool | None = Field(
+        default=None,
+        description="false にすると連携は保ったまま体力予算への反映だけを止める（§7.2）",
+    )
+
+    @field_validator("client_id")
+    @classmethod
+    def _validate_client_id(cls, v: str | None) -> str | None:
+        """形式を検査する。手入力による取り違えを保存前に止める。"""
+        if v is None:
+            return v
+        v = v.strip()
+        if _CLIENT_ID_RE.fullmatch(v):
+            return v
+
+        # 何が悪いのかを具体的に指す。「形式が不正」だけでは直しようがない
+        problems: list[str] = []
+        if any(c.isspace() for c in v):
+            problems.append("空白が含まれています")
+        bad = sorted({c for c in v if not (c.isascii() and (c.isalnum() or c in "-."))})
+        if bad:
+            problems.append("使えない文字が含まれています: " + " ".join(bad))
+        if not v.endswith(".apps.googleusercontent.com"):
+            problems.append("末尾が .apps.googleusercontent.com ではありません")
+        if any(c.isupper() for c in v.split(".apps.")[0]):
+            problems.append("大文字が含まれています")
+        if not problems:
+            problems.append("「数字-英数字.apps.googleusercontent.com」の形になっていません")
+
+        raise ValueError(
+            "client_id の形式が正しくありません（" + " / ".join(problems) + "）。"
+            "Google Cloud Console のクライアントID横にあるコピーボタンで取得して、"
+            "手入力せずに貼り付けてください"
+        )
+
+    @field_validator("client_secret")
+    @classmethod
+    def _validate_client_secret(cls, v: str | None) -> str | None:
+        """シークレットに空白は入らない。貼り付け事故を保存前に止める。"""
+        if v is None:
+            return v
+        v = v.strip()
+        if any(c.isspace() for c in v):
+            raise ValueError(
+                "client_secret に空白が含まれています。"
+                "コピーボタンで取得して、手入力せずに貼り付けてください"
+            )
+        return v
+
+
+def _google_status() -> GoogleStatus:
+    s = google_oauth.status()
+    client_id, _ = store.resolve_google_client()
+    return GoogleStatus(
+        configured=s.configured,
+        linked=s.linked,
+        client_id=client_id,
+        scopes=s.scopes,
+        linked_at=s.linked_at,
+        use_context=s.use_context,
+        login_url="/api/v1/auth/google/login",
+    )
+
+
+@router.get("/google", response_model=GoogleStatus)
+def get_google_status() -> GoogleStatus:
+    """Google連携の状態を返す。"""
+    return _google_status()
+
+
+@router.put("/google", response_model=GoogleStatus)
+def update_google(body: GoogleUpdate) -> GoogleStatus:
+    """OAuthクライアントと反映フラグを保存する。"""
+    if body.client_id is None and body.client_secret is None and body.use_context is None:
+        raise HTTPException(
+            status_code=400, detail="client_id / client_secret / use_context のいずれかを指定してください"
+        )
+
+    if body.client_id is not None:
+        store.set_plain(store.KEY_GOOGLE_CLIENT_ID, body.client_id.strip())
+    if body.client_secret is not None:
+        store.set_secret(store.KEY_GOOGLE_CLIENT_SECRET, body.client_secret.strip())
+    if body.use_context is not None:
+        store.set_plain(store.KEY_GOOGLE_USE_CONTEXT, "1" if body.use_context else "0")
+
+    # 設定を変えたのに古い取得結果が5分残るのは不可解なので、都度捨てる
+    google_client.clear_context_cache()
+    return _google_status()
+
+
+@router.post("/google/test", response_model=TestResult)
+def test_google_client() -> TestResult:
+    """client_id と client_secret の組み合わせを検証する。
+
+    認可画面を通さずに確かめられる。シークレットの誤りは、これが無いと
+    「ログインは通るのにトークン交換で落ちる」という分かりにくい形でしか出ない。
+    """
+    try:
+        ok, message = google_oauth.verify_client()
+        return TestResult(ok=ok, message=message)
+    except google_oauth.GoogleNotConfigured as e:
+        return TestResult(ok=False, message=str(e))
+    except google_oauth.GoogleAuthFailed as e:
+        return TestResult(ok=False, message=str(e))
+
+
+@router.delete("/google", response_model=GoogleStatus)
+def unlink_google() -> GoogleStatus:
+    """連携を解除する。保存済みトークンを削除する。
+
+    Google側の許可はこの操作では取り消されない。完全に断つ場合は
+    https://myaccount.google.com/permissions からも削除する必要がある。
+    """
+    google_oauth.unlink()
+    google_client.clear_context_cache()
+    return _google_status()
 
 
 @router.post("/gemini/test", response_model=TestResult)

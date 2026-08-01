@@ -1,7 +1,34 @@
-# 機微情報 — 絶対にコミットしない
-backend/.env
-backend/.secret.key
-backend/data/*.db
+# 機微情報（APIキー・OAuthトークン・暗号鍵）
+# .env は場所を問わず全て除外する。Vite は frontend/.env も読むので backend/ 限定にしない
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+
+# SQLite（保存済みAPIキー・暗号化済みOAuthトークンが入る）
+*.db
+*.db-shm
+*.db-wal
+*.db-journal
+
+# JSON は既定で除外し、必要なものだけ明示的に許可する（deny by default）。
+# Google の client_secret_*.json / token.json を取り違えて add する事故を防ぐのが目的
+*.json
+!backend/data/*.json
+!package.json
+!package-lock.json
+!tsconfig*.json
+!eslint*.json
+
+# 上の *.json を誰かが緩めた場合の二重の歯止め（意図を明示する意味もある）
+client_secret*.json
+credentials.json
+token*.json
+*service-account*.json
+
+# Claude Code のローカル設定（絶対パスや許可コマンドが入る）
+.claude/settings.local.json
 
 # Python
 __pycache__/
@@ -16,6 +43,16 @@ node_modules/
 dist/
 .vite/
 
+# IDE / エディタ
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ログ
+*.log
+
 # OS
 Thumbs.db
 .DS_Store
+Desktop.ini

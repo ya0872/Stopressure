@@ -30,6 +30,36 @@ CREATE TABLE IF NOT EXISTS reflection (
     felt       INTEGER,
     created_at TEXT NOT NULL
 );
+
+-- 気象スナップショット。API障害時のフォールバックと、しきい値チューニングの検証に使う。
+-- latitude/longitude は設計書 §6 に無いが、別の都市の値でフォールバックしないために必要。
+-- raw_json にはストレス指数を再計算できるだけの時系列（過去24h〜予報12h）を入れる。
+CREATE TABLE IF NOT EXISTS atmosphere_snapshot (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    observed_at  TEXT NOT NULL,
+    latitude     REAL NOT NULL,
+    longitude    REAL NOT NULL,
+    pressure     REAL NOT NULL,
+    temperature  REAL,
+    humidity     REAL,
+    stress_score REAL NOT NULL,
+    source       TEXT NOT NULL,   -- 'open-meteo' | 'jma'
+    raw_json     TEXT
+);
+
+-- フォールバックは常に「直近のもの」を引くため、地点で絞ってからid降順で走査する
+CREATE INDEX IF NOT EXISTS idx_snapshot_location
+    ON atmosphere_snapshot (latitude, longitude, id DESC);
+
+-- OAuthトークン。平文保存を避けFernetで暗号化する（docs/design.md §7.2）。
+-- encrypted には Credentials.to_json() の暗号文が入る。refresh_token を含むため、
+-- ここが漏れるとカレンダーとメールのメタデータに継続的にアクセスされる。
+CREATE TABLE IF NOT EXISTS oauth_token (
+    provider   TEXT PRIMARY KEY,   -- 'google'
+    encrypted  BLOB NOT NULL,
+    expires_at TEXT,
+    updated_at TEXT NOT NULL
+);
 """
 
 
