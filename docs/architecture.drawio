@@ -1,0 +1,669 @@
+<mxfile host="65bd71144e">
+    <diagram id="page-overview" name="1. 全体構成">
+        <mxGraphModel dx="1434" dy="946" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1450" pageHeight="900" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="p1_title" value="低気圧のすゝめ / Atmosphere Studio — 全体構成（docs/design.md §3.1）" style="text;html=1;fontSize=18;fontStyle=1;align=left;verticalAlign=middle;strokeColor=none;fillColor=none;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="16" width="900" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1_note" value="アプリ本体は完全ローカル動作。外部通信は 気象API / Google API / Gemini API の3系統に限定する。" style="text;html=1;fontSize=11;align=left;verticalAlign=middle;strokeColor=none;fillColor=none;fontColor=#5A5A5A;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="44" width="900" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1_client" value="クライアント（ブラウザ）" style="swimlane;html=1;startSize=28;fillColor=#F4F7FA;strokeColor=#8FA3B5;fontSize=13;fontStyle=1;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="80" width="980" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1_react" value="React + TypeScript (Vite) :5173&#xa;main.tsx → Dashboard.tsx&#xa;※ 開発中。ページ5参照" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#E8EEF4;strokeColor=#7A8C9E;" parent="p1_client" vertex="1">
+                    <mxGeometry x="20" y="40" width="290" height="66" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1_mockup" value="mockup/index.html :8765&#xa;製品画面。依存ゼロの単一HTML&#xa;5分ごとに再取得／計算はしない" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#E8EEF4;strokeColor=#7A8C9E;" parent="p1_client" vertex="1">
+                    <mxGeometry x="345" y="40" width="290" height="66" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1_settings_html" value="mockup/settings.html — 設定画面（§8.1）&#xa;mockup/live.html — 生値の確認用（開発用）" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#E8EEF4;strokeColor=#7A8C9E;" parent="p1_client" vertex="1">
+                    <mxGeometry x="670" y="40" width="290" height="66" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1_api" value="FastAPI :8000 — routers/（プレフィックス /api/v1）" style="swimlane;html=1;startSize=28;fillColor=#F3F8F4;strokeColor=#7C9A82;fontSize=13;fontStyle=1;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="260" width="980" height="170" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1_r_atmo" value="atmosphere.py&#xa;GET /atmosphere" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#E6EFE8;strokeColor=#7C9A82;" parent="p1_api" vertex="1">
+                    <mxGeometry x="20" y="42" width="225" height="52" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1_r_plan" value="plan.py&#xa;GET /daily-plan" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#E6EFE8;strokeColor=#7C9A82;" parent="p1_api" vertex="1">
+                    <mxGeometry x="260" y="42" width="225" height="52" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1_r_ctx" value="context.py&#xa;GET /context" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#E6EFE8;strokeColor=#7C9A82;" parent="p1_api" vertex="1">
+                    <mxGeometry x="500" y="42" width="225" height="52" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1_r_refl" value="reflection.py&#xa;POST /reflection（自由文の唯一の入口）" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#E6EFE8;strokeColor=#7C9A82;" parent="p1_api" vertex="1">
+                    <mxGeometry x="740" y="42" width="225" height="52" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1_r_gen" value="generate.py&#xa;POST /generate（自由文を受けない）" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#E6EFE8;strokeColor=#7C9A82;" parent="p1_api" vertex="1">
+                    <mxGeometry x="20" y="104" width="225" height="52" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1_r_set" value="settings.py&#xa;/settings/gemini・/settings/google" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#E6EFE8;strokeColor=#7C9A82;" parent="p1_api" vertex="1">
+                    <mxGeometry x="260" y="104" width="225" height="52" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1_r_auth" value="auth_google.py&#xa;/auth/google/login・/callback" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#E6EFE8;strokeColor=#7C9A82;" parent="p1_api" vertex="1">
+                    <mxGeometry x="500" y="104" width="225" height="52" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1_r_health" value="main.py&#xa;GET /health・CORS・lifespan(init_db)" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#E6EFE8;strokeColor=#7C9A82;" parent="p1_api" vertex="1">
+                    <mxGeometry x="740" y="104" width="225" height="52" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1_svc" value="services/ — ドメインロジック（スコアリングの正本）" style="swimlane;html=1;startSize=28;fillColor=#FAF7F1;strokeColor=#A89878;fontSize=13;fontStyle=1;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="490" width="980" height="170" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1_s_om" value="open_meteo.py&#xa;予報・実測気圧の取得（5分キャッシュ）" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#F2EDE3;strokeColor=#A89878;" parent="p1_svc" vertex="1">
+                    <mxGeometry x="20" y="42" width="225" height="52" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1_s_press" value="pressure.py&#xa;気圧ストレス指数 0〜100（§4.1）" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#F2EDE3;strokeColor=#A89878;" parent="p1_svc" vertex="1">
+                    <mxGeometry x="260" y="42" width="225" height="52" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1_s_budget" value="budget.py&#xa;体力予算 0〜100（§4.2）" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#F2EDE3;strokeColor=#A89878;" parent="p1_svc" vertex="1">
+                    <mxGeometry x="500" y="42" width="225" height="52" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1_s_plan" value="planner.py&#xa;省エネレベルと提案（§4.2.1・§4.3）" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#F2EDE3;strokeColor=#A89878;" parent="p1_svc" vertex="1">
+                    <mxGeometry x="740" y="42" width="225" height="52" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1_s_atmo" value="atmosphere.py&#xa;取得・スナップショット保存・復元" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#F2EDE3;strokeColor=#A89878;" parent="p1_svc" vertex="1">
+                    <mxGeometry x="20" y="104" width="225" height="52" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1_s_goauth" value="google_oauth.py&#xa;OAuth2 + PKCE・トークン保管" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#F2EDE3;strokeColor=#A89878;" parent="p1_svc" vertex="1">
+                    <mxGeometry x="260" y="104" width="225" height="52" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1_s_gclient" value="google_client.py&#xa;拘束時間・ToDo・未読件数（5分キャッシュ）" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#F2EDE3;strokeColor=#A89878;" parent="p1_svc" vertex="1">
+                    <mxGeometry x="500" y="104" width="225" height="52" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1_s_gemini" value="gemini.py&#xa;文章生成（失敗時は定型文で200）" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#F2EDE3;strokeColor=#A89878;" parent="p1_svc" vertex="1">
+                    <mxGeometry x="740" y="104" width="225" height="52" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1_infra" value="永続化・設定" style="swimlane;html=1;startSize=28;fillColor=#F6F3F8;strokeColor=#90809A;fontSize=13;fontStyle=1;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="720" width="980" height="110" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1_db" value="SQLite backend/data/app.db&#xa;db.py（起動時に init_db）" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#EDE7F0;strokeColor=#90809A;" parent="p1_infra" vertex="1">
+                    <mxGeometry x="20" y="42" width="225" height="52" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1_conf" value="config/thresholds.yaml&#xa;閾値・レベル境界・提案プール" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#EDE7F0;strokeColor=#90809A;" parent="p1_infra" vertex="1">
+                    <mxGeometry x="260" y="42" width="225" height="52" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1_crypto" value="crypto.py（Fernet）&#xa;APIキー・OAuthトークンの暗号化" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#EDE7F0;strokeColor=#90809A;" parent="p1_infra" vertex="1">
+                    <mxGeometry x="500" y="42" width="225" height="52" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1_env" value="backend/.env&#xa;TOKEN_ENCRYPTION_KEY・CORS_ORIGINS" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#EDE7F0;strokeColor=#90809A;" parent="p1_infra" vertex="1">
+                    <mxGeometry x="740" y="42" width="225" height="52" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1_ext" value="外部API" style="swimlane;html=1;startSize=28;fillColor=#FBF5F5;strokeColor=#B08A8A;fontSize=13;fontStyle=1;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="1070" y="260" width="300" height="570" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1_e_om" value="Open-Meteo&#xa;予報＋実測の1時間粒度気圧&#xa;APIキー不要（フェーズ1の主系統）" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#F5E4E4;strokeColor=#B08A8A;" parent="p1_ext" vertex="1">
+                    <mxGeometry x="20" y="45" width="260" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1_e_google" value="Google APIs（OAuth 2.0 読み取り専用）&#xa;calendar.readonly&#xa;tasks.readonly&#xa;gmail.metadata（IMPORTANT の未読件数のみ）" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#F5E4E4;strokeColor=#B08A8A;" parent="p1_ext" vertex="1">
+                    <mxGeometry x="20" y="130" width="260" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1_e_gemini" value="Gemini API&#xa;夜の吐き出しへの応答・献立・トーン変換&#xa;キーは Fernet 暗号化して保存" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#F5E4E4;strokeColor=#B08A8A;" parent="p1_ext" vertex="1">
+                    <mxGeometry x="20" y="235" width="260" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1_e_label" value="── 未実装（設計書のみ）──" style="text;html=1;fontSize=11;align=center;verticalAlign=middle;strokeColor=none;fillColor=none;fontColor=#8A8A8A;" parent="p1_ext" vertex="1">
+                    <mxGeometry x="20" y="315" width="260" height="24" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1_e_jma" value="気象庁 アメダスJSON（フェーズ2）&#xa;10分粒度の実測。予報は取得不可" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#F5F5F5;strokeColor=#9E9E9E;dashed=1;fontColor=#666666;" parent="p1_ext" vertex="1">
+                    <mxGeometry x="20" y="345" width="260" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1_e_voice" value="VOICEVOX ENGINE :50021（フェーズ4）&#xa;未起動時はテキスト表示へフォールバック" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#F5F5F5;strokeColor=#9E9E9E;dashed=1;fontColor=#666666;" parent="p1_ext" vertex="1">
+                    <mxGeometry x="20" y="415" width="260" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1_e_llm" value="ローカルLLM（Ollama / LM Studio）&#xa;導入コストに見合わず版0.3で見送り" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#F5F5F5;strokeColor=#9E9E9E;dashed=1;fontColor=#666666;" parent="p1_ext" vertex="1">
+                    <mxGeometry x="20" y="485" width="260" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1_edge1" value="HTTP /api/v1（CORS: :5173 / :8765）" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=0;endArrow=block;strokeColor=#6B7B8C;fontSize=11;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="p1_client" target="p1_api" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1_edge2" value="Pydanticモデルで応答を組み立てる" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=0;endArrow=block;strokeColor=#6B7B8C;fontSize=11;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="p1_api" target="p1_svc" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1_edge3" value="読み書き・閾値の参照" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=0;endArrow=block;strokeColor=#6B7B8C;fontSize=11;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="p1_svc" target="p1_infra" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1_edge4" value="HTTPS" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=0;endArrow=block;strokeColor=#A56E6E;fontSize=10;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="p1_s_om" target="p1_e_om" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1_edge5" value="HTTPS" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=0;endArrow=block;strokeColor=#A56E6E;fontSize=10;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="p1_s_gclient" target="p1_e_google" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1_edge6" value="HTTPS" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=0;endArrow=block;strokeColor=#A56E6E;fontSize=10;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="p1_s_gemini" target="p1_e_gemini" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p1_legend" value="実線＝実装済み　　破線＝未実装（設計書のみ）" style="text;html=1;fontSize=11;align=left;verticalAlign=middle;strokeColor=none;fillColor=none;fontColor=#5A5A5A;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="845" width="600" height="20" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+    <diagram id="page-modules" name="2. モジュール依存">
+        <mxGraphModel dx="1434" dy="946" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1450" pageHeight="900" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="p2_title" value="バックエンドのモジュール依存（backend/app 配下の import 関係）" style="text;html=1;fontSize=18;fontStyle=1;align=left;verticalAlign=middle;strokeColor=none;fillColor=none;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="16" width="900" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2_note" value="依存は左から右への一方向。services は routers を知らず、基盤は services を知らない。" style="text;html=1;fontSize=11;align=left;verticalAlign=middle;strokeColor=none;fillColor=none;fontColor=#5A5A5A;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="44" width="900" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2_h1" value="routers/" style="text;html=1;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;strokeColor=none;fillColor=none;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="80" width="230" height="24" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2_h2" value="services/" style="text;html=1;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;strokeColor=none;fillColor=none;" parent="1" vertex="1">
+                    <mxGeometry x="430" y="80" width="230" height="24" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2_h3" value="基盤（永続化・設定）" style="text;html=1;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;strokeColor=none;fillColor=none;" parent="1" vertex="1">
+                    <mxGeometry x="800" y="80" width="230" height="24" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2_h4" value="外部" style="text;html=1;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;strokeColor=none;fillColor=none;" parent="1" vertex="1">
+                    <mxGeometry x="1150" y="80" width="230" height="24" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2_r_atmo" value="atmosphere.py" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#E6EFE8;strokeColor=#7C9A82;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="120" width="230" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2_r_plan" value="plan.py" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#E6EFE8;strokeColor=#7C9A82;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="180" width="230" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2_r_ctx" value="context.py" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#E6EFE8;strokeColor=#7C9A82;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="240" width="230" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2_r_gen" value="generate.py" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#E6EFE8;strokeColor=#7C9A82;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="300" width="230" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2_r_refl" value="reflection.py" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#E6EFE8;strokeColor=#7C9A82;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="360" width="230" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2_r_set" value="settings.py" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#E6EFE8;strokeColor=#7C9A82;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="420" width="230" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2_r_auth" value="auth_google.py" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#E6EFE8;strokeColor=#7C9A82;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="480" width="230" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2_r_main" value="main.py — ルーター登録・CORS・init_db" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#DCE8DE;strokeColor=#7C9A82;fontStyle=2;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="545" width="230" height="46" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2_s_atmo" value="atmosphere.py&#xa;取得・保存・復元の取りまとめ" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#F2EDE3;strokeColor=#A89878;" parent="1" vertex="1">
+                    <mxGeometry x="430" y="120" width="230" height="46" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2_s_om" value="open_meteo.py&#xa;HTTP取得・5分キャッシュ・JST" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#F2EDE3;strokeColor=#A89878;" parent="1" vertex="1">
+                    <mxGeometry x="430" y="182" width="230" height="46" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2_s_press" value="pressure.py&#xa;pressure_stress()" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#F2EDE3;strokeColor=#A89878;" parent="1" vertex="1">
+                    <mxGeometry x="430" y="244" width="230" height="46" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2_s_budget" value="budget.py&#xa;energy_budget() / DailyContext" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#F2EDE3;strokeColor=#A89878;" parent="1" vertex="1">
+                    <mxGeometry x="430" y="306" width="230" height="46" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2_s_plan" value="planner.py&#xa;resolve_level() / pick_suggestions()" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#F2EDE3;strokeColor=#A89878;" parent="1" vertex="1">
+                    <mxGeometry x="430" y="368" width="230" height="46" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2_s_gclient" value="google_client.py&#xa;Calendar / Tasks / Gmail" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#F2EDE3;strokeColor=#A89878;" parent="1" vertex="1">
+                    <mxGeometry x="430" y="430" width="230" height="46" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2_s_goauth" value="google_oauth.py&#xa;PKCE・トークン更新・unlink" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#F2EDE3;strokeColor=#A89878;" parent="1" vertex="1">
+                    <mxGeometry x="430" y="492" width="230" height="46" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2_s_gemini" value="gemini.py&#xa;generate() / list_models()" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#F2EDE3;strokeColor=#A89878;" parent="1" vertex="1">
+                    <mxGeometry x="430" y="554" width="230" height="46" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2_conf" value="config/__init__.py&#xa;thresholds.yaml を lru_cache で読む" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#EDE7F0;strokeColor=#90809A;" parent="1" vertex="1">
+                    <mxGeometry x="800" y="244" width="230" height="46" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2_store" value="settings_store.py&#xa;app_setting の読み書き（平文/暗号）" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#EDE7F0;strokeColor=#90809A;" parent="1" vertex="1">
+                    <mxGeometry x="800" y="368" width="230" height="46" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2_oauth_store" value="oauth_store.py&#xa;oauth_token の保存・削除" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#EDE7F0;strokeColor=#90809A;" parent="1" vertex="1">
+                    <mxGeometry x="800" y="492" width="230" height="46" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2_crypto" value="crypto.py&#xa;Fernet 暗号化・mask()" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#EDE7F0;strokeColor=#90809A;" parent="1" vertex="1">
+                    <mxGeometry x="800" y="616" width="230" height="46" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2_db" value="db.py&#xa;get_conn() / init_db()　→ data/app.db" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#EDE7F0;strokeColor=#90809A;" parent="1" vertex="1">
+                    <mxGeometry x="800" y="700" width="230" height="46" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2_e_om" value="Open-Meteo" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#F5E4E4;strokeColor=#B08A8A;" parent="1" vertex="1">
+                    <mxGeometry x="1150" y="182" width="230" height="46" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2_e_google" value="Google Calendar / Tasks / Gmail" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#F5E4E4;strokeColor=#B08A8A;" parent="1" vertex="1">
+                    <mxGeometry x="1150" y="430" width="230" height="46" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2_e_oauth" value="Google OAuth 2.0 エンドポイント" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#F5E4E4;strokeColor=#B08A8A;" parent="1" vertex="1">
+                    <mxGeometry x="1150" y="492" width="230" height="46" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2_e_gemini" value="Gemini API" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#F5E4E4;strokeColor=#B08A8A;" parent="1" vertex="1">
+                    <mxGeometry x="1150" y="554" width="230" height="46" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2_e1" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=1;endArrow=block;strokeColor=#8A8A8A;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" parent="1" source="p2_r_atmo" target="p2_s_atmo" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2_e2" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=1;endArrow=block;strokeColor=#8A8A8A;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" parent="1" source="p2_r_atmo" target="p2_s_om" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2_e3" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=1;endArrow=block;strokeColor=#8A8A8A;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" parent="1" source="p2_r_plan" target="p2_s_atmo" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2_e4" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=1;endArrow=block;strokeColor=#8A8A8A;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" parent="1" source="p2_r_plan" target="p2_s_plan" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2_e5" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=1;endArrow=block;strokeColor=#8A8A8A;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" parent="1" source="p2_r_plan" target="p2_s_gclient" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2_e6" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=1;endArrow=block;strokeColor=#8A8A8A;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" parent="1" source="p2_r_ctx" target="p2_s_gclient" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2_e7" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=1;endArrow=block;strokeColor=#8A8A8A;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" parent="1" source="p2_r_ctx" target="p2_s_goauth" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2_e8" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=1;endArrow=block;strokeColor=#8A8A8A;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" parent="1" source="p2_r_gen" target="p2_s_gemini" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2_e9" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=1;endArrow=block;strokeColor=#8A8A8A;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" parent="1" source="p2_r_refl" target="p2_s_gemini" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2_e10" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=1;endArrow=block;strokeColor=#8A8A8A;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" parent="1" source="p2_r_set" target="p2_s_gemini" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2_e11" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=1;endArrow=block;strokeColor=#8A8A8A;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" parent="1" source="p2_r_set" target="p2_s_goauth" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2_e12" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=1;endArrow=block;strokeColor=#8A8A8A;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" parent="1" source="p2_r_auth" target="p2_s_goauth" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2_e20" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=1;endArrow=block;strokeColor=#A89878;exitX=0.25;exitY=1;entryX=0.25;entryY=0;" parent="1" source="p2_s_atmo" target="p2_s_om" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2_e21" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=1;endArrow=block;strokeColor=#A89878;exitX=0;exitY=0.5;entryX=0;entryY=0.5;" parent="1" source="p2_s_atmo" target="p2_s_press" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="400" y="143"/>
+                            <mxPoint x="400" y="267"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="p2_e22" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=1;endArrow=block;strokeColor=#A89878;exitX=0.75;exitY=1;entryX=0.75;entryY=0;" parent="1" source="p2_s_press" target="p2_s_budget" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2_e23" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=1;endArrow=block;strokeColor=#A89878;exitX=0.5;exitY=0;entryX=0.5;entryY=1;" parent="1" source="p2_s_plan" target="p2_s_budget" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2_e24" value="遅延 import" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=1;endArrow=block;strokeColor=#A89878;dashed=1;fontSize=10;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" parent="1" source="p2_s_gclient" target="p2_s_goauth" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2_e30" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=1;endArrow=block;strokeColor=#90809A;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" parent="1" source="p2_s_press" target="p2_conf" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2_e31" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=1;endArrow=block;strokeColor=#90809A;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" parent="1" source="p2_s_budget" target="p2_conf" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2_e32" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=1;endArrow=block;strokeColor=#90809A;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" parent="1" source="p2_s_plan" target="p2_conf" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2_e33" value="スナップショット" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=1;endArrow=block;strokeColor=#90809A;fontSize=10;exitX=1;exitY=0.5;entryX=0.5;entryY=0;" parent="1" source="p2_s_atmo" target="p2_db" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="740" y="143"/>
+                            <mxPoint x="740" y="680"/>
+                            <mxPoint x="915" y="680"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="p2_e34" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=1;endArrow=block;strokeColor=#90809A;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" parent="1" source="p2_s_goauth" target="p2_oauth_store" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2_e35" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=1;endArrow=block;strokeColor=#90809A;exitX=1;exitY=0.25;entryX=0;entryY=0.5;" parent="1" source="p2_s_goauth" target="p2_store" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="740" y="504"/>
+                            <mxPoint x="740" y="391"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="p2_e36" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=1;endArrow=block;strokeColor=#90809A;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" parent="1" source="p2_store" target="p2_crypto" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2_e37" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=1;endArrow=block;strokeColor=#90809A;exitX=0.25;exitY=1;entryX=0.25;entryY=0;" parent="1" source="p2_oauth_store" target="p2_crypto" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2_e38" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=1;endArrow=block;strokeColor=#90809A;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" parent="1" source="p2_crypto" target="p2_db" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2_e39" value="reflection を保存" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=1;endArrow=block;strokeColor=#90809A;fontSize=10;exitX=0.5;exitY=1;entryX=0;entryY=0.5;" parent="1" source="p2_r_refl" target="p2_db" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="175" y="723"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="p2_e40" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=1;endArrow=block;strokeColor=#B08A8A;exitX=1;exitY=0.25;entryX=0;entryY=0.5;" parent="1" source="p2_s_om" target="p2_e_om" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1100" y="194"/>
+                            <mxPoint x="1100" y="205"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="p2_e41" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=1;endArrow=block;strokeColor=#B08A8A;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" parent="1" source="p2_s_gclient" target="p2_e_google" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1100" y="453"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="p2_e42" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=1;endArrow=block;strokeColor=#B08A8A;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" parent="1" source="p2_s_goauth" target="p2_e_oauth" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1100" y="515"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="p2_e43" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=1;endArrow=block;strokeColor=#B08A8A;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" parent="1" source="p2_s_gemini" target="p2_e_gemini" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1100" y="577"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="p2_memo" value="設計上の要点&#xa;・自由文（ユーザーの言葉）が Gemini へ出る経路は reflection.py の1本のみ。&#xa;　generate.py は自由文フィールドを持たない（tests/test_generate_guard.py で固定）。&#xa;・平文の秘密情報を返すエンドポイントは存在しない。settings.py は crypto.mask() の結果だけを返す。&#xa;・google_client は google_oauth を関数内で遅延 import する（未連携でも /daily-plan を落とさないため）。" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fontSize=11;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;fillColor=#FBFBF7;strokeColor=#C7C2B4;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="640" width="640" height="120" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+    <diagram id="page-flow" name="3. /daily-plan の処理フロー">
+        <mxGraphModel dx="1434" dy="946" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1450" pageHeight="1150" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="p3_title" value="GET /api/v1/daily-plan の処理フロー（スコアリングの本流）" style="text;html=1;fontSize=18;fontStyle=1;align=left;verticalAlign=middle;strokeColor=none;fillColor=none;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="16" width="900" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="p3_note" value="レベル・ヘッドライン・提案・内訳はすべてサーバー側で確定する。画面は描画するだけで計算しない。" style="text;html=1;fontSize=11;align=left;verticalAlign=middle;strokeColor=none;fillColor=none;fontColor=#5A5A5A;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="44" width="900" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="p3_start" value="GET /api/v1/daily-plan?lat=&amp;lon=&#xa;省略時は野々市市（36.5297, 136.6094）" style="rounded=1;arcSize=40;whiteSpace=wrap;html=1;fontSize=11;fillColor=#E8EEF4;strokeColor=#7A8C9E;" parent="1" vertex="1">
+                    <mxGeometry x="440" y="90" width="300" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="p3_n1" value="services.atmosphere.current(lat, lon)" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#F2EDE3;strokeColor=#A89878;" parent="1" vertex="1">
+                    <mxGeometry x="440" y="170" width="300" height="44" as="geometry"/>
+                </mxCell>
+                <mxCell id="p3_dec1" value="open_meteo.fetch()&#xa;に到達できたか" style="rhombus;whiteSpace=wrap;html=1;fontSize=11;fillColor=#F7F1E4;strokeColor=#A89878;" parent="1" vertex="1">
+                    <mxGeometry x="500" y="244" width="180" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="p3_ok" value="_save_snapshot()&#xa;atmosphere_snapshot に記録&#xa;stale = false" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#EDF3EE;strokeColor=#7C9A82;" parent="1" vertex="1">
+                    <mxGeometry x="770" y="252" width="240" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="p3_ng" value="_load_snapshot()&#xa;同一地点・直近6時間以内の記録から復元&#xa;stale = true" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#FAF3EC;strokeColor=#C79A6A;" parent="1" vertex="1">
+                    <mxGeometry x="160" y="252" width="240" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="p3_503" value="503 AtmosphereUnavailable&#xa;（復元もできない場合のみ）" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#F7E7E7;strokeColor=#B07070;" parent="1" vertex="1">
+                    <mxGeometry x="160" y="345" width="240" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="p3_n2" value="pressure.pressure_stress(pressures, now_index)&#xa;気圧ストレス指数 0〜100" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#F2EDE3;strokeColor=#A89878;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="440" y="380" width="300" height="54" as="geometry"/>
+                </mxCell>
+                <mxCell id="p3_n3" value="google_client.current_context()&#xa;連携済みのときだけ実行（5分キャッシュ）&#xa;未連携・取得失敗の項目は None のまま" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#F2EDE3;strokeColor=#A89878;dashed=1;" parent="1" vertex="1">
+                    <mxGeometry x="440" y="464" width="300" height="64" as="geometry"/>
+                </mxCell>
+                <mxCell id="p3_n4" value="budget.energy_budget(ctx)&#xa;100 から因子ごとに減点（各因子にキャップ）" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#F2EDE3;strokeColor=#A89878;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="440" y="558" width="300" height="54" as="geometry"/>
+                </mxCell>
+                <mxCell id="p3_n5" value="planner.resolve_level(budget, stress)&#xa;level = max( 予算由来のレベル , 気圧ストレス由来の下限 )&#xa;level_driven_by_pressure = 気圧側が勝ったか" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#F0E9DC;strokeColor=#8A7A5A;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="410" y="642" width="360" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p3_n6" value="planner.pick_suggestions(level)&#xa;レベル以下の負荷プールから重い順に最大3件／Lv5は1件" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#F2EDE3;strokeColor=#A89878;" parent="1" vertex="1">
+                    <mxGeometry x="440" y="742" width="300" height="54" as="geometry"/>
+                </mxCell>
+                <mxCell id="p3_end" value="DailyPlanResponse&#xa;energy_budget / level / level_name / headline /&#xa;pressure_stress / stale / breakdown / suggestions" style="rounded=1;arcSize=40;whiteSpace=wrap;html=1;fontSize=11;fillColor=#E8EEF4;strokeColor=#7A8C9E;" parent="1" vertex="1">
+                    <mxGeometry x="420" y="826" width="340" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p3_f1" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=0;endArrow=block;strokeColor=#6B7B8C;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" parent="1" source="p3_start" target="p3_n1" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p3_f2" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=0;endArrow=block;strokeColor=#6B7B8C;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" parent="1" source="p3_n1" target="p3_dec1" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p3_f3" value="到達できた" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=0;endArrow=block;strokeColor=#6B7B8C;fontSize=10;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" parent="1" source="p3_dec1" target="p3_ok" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p3_f4" value="通信断" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=0;endArrow=block;strokeColor=#C79A6A;fontSize=10;exitX=0;exitY=0.5;entryX=1;entryY=0.5;" parent="1" source="p3_dec1" target="p3_ng" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p3_f5" value="記録なし" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=0;endArrow=block;strokeColor=#B07070;fontSize=10;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" parent="1" source="p3_ng" target="p3_503" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p3_f6" value="復元できた" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=0;endArrow=block;strokeColor=#C79A6A;fontSize=10;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" parent="1" source="p3_ng" target="p3_n2" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="420" y="282"/>
+                            <mxPoint x="420" y="407"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="p3_f7" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=0;endArrow=block;strokeColor=#6B7B8C;exitX=1;exitY=0.5;entryX=1;entryY=0.5;" parent="1" source="p3_ok" target="p3_n2" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1060" y="282"/>
+                            <mxPoint x="1060" y="407"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="p3_f8" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=0;endArrow=block;strokeColor=#6B7B8C;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" parent="1" source="p3_n2" target="p3_n3" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p3_f9" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=0;endArrow=block;strokeColor=#6B7B8C;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" parent="1" source="p3_n3" target="p3_n4" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p3_f10" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=0;endArrow=block;strokeColor=#6B7B8C;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" parent="1" source="p3_n4" target="p3_n5" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p3_f11" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=0;endArrow=block;strokeColor=#6B7B8C;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" parent="1" source="p3_n5" target="p3_n6" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p3_f12" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=0;endArrow=block;strokeColor=#6B7B8C;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" parent="1" source="p3_n6" target="p3_end" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p3_f13" value="気圧ストレスは&#xa;レベルの下限にも効く" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=1;endArrow=block;strokeColor=#8A7A5A;dashed=1;fontSize=10;exitX=1;exitY=0.5;entryX=1;entryY=0.5;" parent="1" source="p3_n2" target="p3_n5" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="820" y="407"/>
+                            <mxPoint x="820" y="677"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="p3_memo1" value="気圧ストレス指数の配点（§4.1・thresholds.yaml）&#xa;絶対値ではなく変化率を主軸にする。標高の高い地域や台風一過の晴天日での誤判定を避けるため。&#xa;・直近6時間の低下：1hPa あたり 10点（上限 40）&#xa;・直近24時間の低下：1hPa あたり 3点（上限 30）&#xa;・これから6時間の予報低下：1hPa あたり 5点（上限 20）体調は先行して崩れるため&#xa;・1000hPa 未満の絶対値：補助指標として上限 10点" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fontSize=11;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;fillColor=#FBFBF7;strokeColor=#C7C2B4;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="430" width="350" height="140" as="geometry"/>
+                </mxCell>
+                <mxCell id="p3_memo2" value="体力予算の減点因子とキャップ（§4.2）&#xa;・気圧ストレス × 0.40 ……………… 最大 −40&#xa;・前日比の気温変化 …………………… 最大 −10&#xa;・不快指数（75超）…………………… 最大 −10&#xa;・睡眠不足（7時間基準）…………… 最大 −20 ※フェーズ2&#xa;・予定による拘束 ……………………… 最大 −15 ※Google連携&#xa;・要対応メール＋ToDo ……………… 最大 −5 ※Google連携&#xa;&#xa;単一因子が予算を食い尽くさないよう、すべてにキャップを置く。&#xa;未計測の因子は None のままで、内訳（breakdown）に現れない。&#xa;0（計測して負荷なし）と None（未計測）は区別する。" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fontSize=11;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;fillColor=#FBFBF7;strokeColor=#C7C2B4;" parent="1" vertex="1">
+                    <mxGeometry x="800" y="480" width="380" height="200" as="geometry"/>
+                </mxCell>
+                <mxCell id="p3_memo3" value="レベルの決め方（§4.2.1・2026-08-01 決定）&#xa;予算由来：Lv1 = 80〜100／Lv2 = 60〜79／Lv3 = 40〜59／Lv4 = 20〜39／Lv5 = 0〜19&#xa;気圧由来の下限：ストレス 90以上→Lv5／75以上→Lv4／55以上→Lv3／35以上→Lv2&#xa;&#xa;これは「下限」であって「固定」ではない。フェーズ2以降で睡眠不足や拘束が加わり、&#xa;予算由来のレベルがより深くなればそちらが勝つ。&#xa;&#xa;なぜ必要か：気象因子の上限は 100 × 0.40 = 40点。フェーズ1で引ける点は&#xa;気象40＋気温10＋湿度10 = 最大60 しかなく、純粋な予算モデルでは Lv4・Lv5 に到達できない。&#xa;台風接近が「省エネ（Lv3）」と表示され、気圧を掲げるプロダクトとして破綻する。&#xa;&#xa;※ 単純な予算しきい値へ戻さないこと。" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fontSize=11;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;fillColor=#F7F3EA;strokeColor=#A89878;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="640" width="330" height="230" as="geometry"/>
+                </mxCell>
+                <mxCell id="p3_memo4" value="提案の選定ルール（§4.3・§1.2）&#xa;・そのレベル以下の負荷を持つプールからのみ選ぶ（上振れ禁止）&#xa;・許される上限に近い（＝重い）ものから選ぶ。軽い順だと全レベルで&#xa;　「何もしない」が筆頭になり、レベルの差が消える&#xa;・1日 最大3件。多いこと自体が負荷になるため&#xa;・Lv5 は1件のみ。「何もしないこと」が本日の目標&#xa;・チェックボックス相当のフィールドを持たせない（完了/未完了の概念を作らない）" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fontSize=11;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;fillColor=#FBFBF7;strokeColor=#C7C2B4;" parent="1" vertex="1">
+                    <mxGeometry x="800" y="720" width="380" height="140" as="geometry"/>
+                </mxCell>
+                <mxCell id="p3_memo5" value="関連する未決事項　§11 #10：Google連携の減点は拘束15＋メール/ToDo 5 = 最大20点。予算は80止まりで、これはちょうどLv1の下限。&#xa;予定が詰まっているだけではレベルが動かない。連携は「レベルを変える機能」ではなく「気圧が悪い日の落ち込みを深める機能」として働く。" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fontSize=11;align=left;verticalAlign=middle;spacingLeft=10;fillColor=#F7F3F3;strokeColor=#B08A8A;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="920" width="1120" height="60" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+    <diagram id="page-data" name="4. データモデル">
+        <mxGraphModel dx="1434" dy="946" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1450" pageHeight="900" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="p4_title" value="データモデル（SQLite: backend/data/app.db）" style="text;html=1;fontSize=18;fontStyle=1;align=left;verticalAlign=middle;strokeColor=none;fillColor=none;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="16" width="900" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="p4_note" value="スキーマは db.py の _SCHEMA が正本。起動時に lifespan → init_db() で CREATE TABLE IF NOT EXISTS を流す。テーブル間に外部キーはない（単一ユーザーのローカル運用のため）。" style="text;html=1;fontSize=11;align=left;verticalAlign=middle;strokeColor=none;fillColor=none;fontColor=#5A5A5A;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="44" width="1100" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="p4_label1" value="実装済み（db.py の _SCHEMA）" style="text;html=1;fontSize=13;fontStyle=1;align=left;verticalAlign=middle;strokeColor=none;fillColor=none;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="84" width="400" height="24" as="geometry"/>
+                </mxCell>
+                <mxCell id="p4_t1" value="app_setting" style="swimlane;html=1;startSize=28;fillColor=#EDE7F0;strokeColor=#90809A;fontSize=12;fontStyle=1;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="120" width="290" height="180" as="geometry"/>
+                </mxCell>
+                <mxCell id="p4_t1b" value="key         TEXT PRIMARY KEY&#xa;value       TEXT   — 平文で良い設定&#xa;encrypted   BLOB   — 機微な設定&#xa;updated_at  TEXT NOT NULL&#xa;&#xa;value と encrypted は排他利用。&#xa;Geminiのモデル名・APIキー、&#xa;GoogleのクライアントID/シークレット、&#xa;use_context フラグを持つ。" style="text;html=1;fontSize=11;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;strokeColor=none;fillColor=none;" parent="p4_t1" vertex="1">
+                    <mxGeometry y="28" width="290" height="152" as="geometry"/>
+                </mxCell>
+                <mxCell id="p4_t2" value="atmosphere_snapshot" style="swimlane;html=1;startSize=28;fillColor=#EDE7F0;strokeColor=#90809A;fontSize=12;fontStyle=1;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="390" y="120" width="330" height="255" as="geometry"/>
+                </mxCell>
+                <mxCell id="p4_t2b" value="id            INTEGER PK AUTOINCREMENT&#xa;observed_at   TEXT NOT NULL&#xa;latitude      REAL NOT NULL&#xa;longitude     REAL NOT NULL&#xa;pressure      REAL NOT NULL&#xa;temperature   REAL&#xa;humidity      REAL&#xa;stress_score  REAL NOT NULL&#xa;source        TEXT NOT NULL  — &#39;open-meteo&#39; | &#39;jma&#39;&#xa;raw_json      TEXT&#xa;&#xa;INDEX (latitude, longitude, id DESC)&#xa;通信断時のフォールバック元。地点で絞らないと&#xa;移動時に別の都市の値を今日の気圧として出す。&#xa;raw_json には再計算できる時系列を入れる。" style="text;html=1;fontSize=11;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;strokeColor=none;fillColor=none;" parent="p4_t2" vertex="1">
+                    <mxGeometry y="28" width="330" height="227" as="geometry"/>
+                </mxCell>
+                <mxCell id="p4_t3" value="reflection" style="swimlane;html=1;startSize=28;fillColor=#EDE7F0;strokeColor=#90809A;fontSize=12;fontStyle=1;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="760" y="120" width="330" height="200" as="geometry"/>
+                </mxCell>
+                <mxCell id="p4_t3b" value="id          INTEGER PK AUTOINCREMENT&#xa;date        TEXT NOT NULL&#xa;user_text   TEXT NOT NULL&#xa;reply_text  TEXT NOT NULL&#xa;level       INTEGER&#xa;felt        INTEGER  — 1:つらい 2:普通 3:平気&#xa;created_at  TEXT NOT NULL&#xa;&#xa;夜の吐き出しの記録。felt は F-15（気圧耐性の&#xa;個人化）の学習用で NULL 可。記録の義務化はしない。" style="text;html=1;fontSize=11;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;strokeColor=none;fillColor=none;" parent="p4_t3" vertex="1">
+                    <mxGeometry y="28" width="330" height="172" as="geometry"/>
+                </mxCell>
+                <mxCell id="p4_t4" value="oauth_token" style="swimlane;html=1;startSize=28;fillColor=#EDE7F0;strokeColor=#90809A;fontSize=12;fontStyle=1;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="330" width="290" height="180" as="geometry"/>
+                </mxCell>
+                <mxCell id="p4_t4b" value="provider    TEXT PRIMARY KEY — &#39;google&#39;&#xa;encrypted   BLOB NOT NULL&#xa;expires_at  TEXT&#xa;updated_at  TEXT NOT NULL&#xa;&#xa;Credentials.to_json() を Fernet で暗号化。&#xa;refresh_token を含むため、漏れると継続的に&#xa;カレンダーとメタデータへ触れられる。&#xa;返す経路はどのエンドポイントにもない。" style="text;html=1;fontSize=11;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;strokeColor=none;fillColor=none;" parent="p4_t4" vertex="1">
+                    <mxGeometry y="28" width="290" height="152" as="geometry"/>
+                </mxCell>
+                <mxCell id="p4_label2" value="設計書 §6 にあるが未実装" style="text;html=1;fontSize=13;fontStyle=1;align=left;verticalAlign=middle;strokeColor=none;fillColor=none;fontColor=#777777;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="545" width="400" height="24" as="geometry"/>
+                </mxCell>
+                <mxCell id="p4_t5" value="sleep_log（フェーズ2 / F-04）" style="swimlane;html=1;startSize=28;fillColor=#F5F5F5;strokeColor=#9E9E9E;fontSize=12;fontStyle=1;align=center;dashed=1;fontColor=#666666;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="580" width="290" height="140" as="geometry"/>
+                </mxCell>
+                <mxCell id="p4_t5b" value="date       TEXT PRIMARY KEY&#xa;bedtime    TEXT&#xa;wake_time  TEXT&#xa;created_at TEXT NOT NULL&#xa;&#xa;睡眠不足は予算の −20 枠。手入力が第一手段。" style="text;html=1;fontSize=11;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;strokeColor=none;fillColor=none;fontColor=#666666;" parent="p4_t5" vertex="1">
+                    <mxGeometry y="28" width="290" height="112" as="geometry"/>
+                </mxCell>
+                <mxCell id="p4_t6" value="activity_log（フェーズ3-4 / F-10・F-14）" style="swimlane;html=1;startSize=28;fillColor=#F5F5F5;strokeColor=#9E9E9E;fontSize=12;fontStyle=1;align=center;dashed=1;fontColor=#666666;" parent="1" vertex="1">
+                    <mxGeometry x="390" y="580" width="330" height="140" as="geometry"/>
+                </mxCell>
+                <mxCell id="p4_t6b" value="id         INTEGER PK AUTOINCREMENT&#xa;date       TEXT NOT NULL&#xa;category   TEXT NOT NULL — meal|move|rest|other&#xa;text       TEXT NOT NULL&#xa;created_at TEXT NOT NULL&#xa;&#xa;任意記録。無い日は行が存在しないだけ。" style="text;html=1;fontSize=11;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;strokeColor=none;fillColor=none;fontColor=#666666;" parent="p4_t6" vertex="1">
+                    <mxGeometry y="28" width="330" height="112" as="geometry"/>
+                </mxCell>
+                <mxCell id="p4_t7" value="personal_threshold（フェーズ5 / F-15）" style="swimlane;html=1;startSize=28;fillColor=#F5F5F5;strokeColor=#9E9E9E;fontSize=12;fontStyle=1;align=center;dashed=1;fontColor=#666666;" parent="1" vertex="1">
+                    <mxGeometry x="760" y="580" width="330" height="140" as="geometry"/>
+                </mxCell>
+                <mxCell id="p4_t7b" value="key        TEXT PRIMARY KEY&#xa;value      REAL NOT NULL&#xa;samples    INTEGER NOT NULL&#xa;updated_at TEXT NOT NULL&#xa;&#xa;20日分の記録が貯まってから係数のみ調整する。&#xa;式の構造は変えない（説明可能性を保つため）。" style="text;html=1;fontSize=11;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;strokeColor=none;fillColor=none;fontColor=#666666;" parent="p4_t7" vertex="1">
+                    <mxGeometry y="28" width="330" height="112" as="geometry"/>
+                </mxCell>
+                <mxCell id="p4_memo" value="書き込む側&#xa;・app_setting ← settings_store.py（routers/settings.py 経由）&#xa;・atmosphere_snapshot ← services/atmosphere.py（取得成功のたび）&#xa;・reflection ← routers/reflection.py（応答生成後）&#xa;・oauth_token ← oauth_store.py（services/google_oauth.py 経由）" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fontSize=11;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;fillColor=#FBFBF7;strokeColor=#C7C2B4;" parent="1" vertex="1">
+                    <mxGeometry x="760" y="345" width="330" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="p4_memo2" value="暗号化の境界：BLOB の encrypted 列（app_setting・oauth_token）は crypto.py の Fernet で暗号化する。鍵は backend/.env の TOKEN_ENCRYPTION_KEY。&#xa;APIから平文を返す経路は作らない。設定画面には crypto.mask() のマスク済み文字列だけを返す。" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fontSize=11;align=left;verticalAlign=middle;spacingLeft=10;fillColor=#F7F3F3;strokeColor=#B08A8A;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="750" width="1030" height="60" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+    <diagram id="page-frontend" name="5. フロントエンド構成">
+        <mxGraphModel dx="1434" dy="946" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1450" pageHeight="900" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="p5_title" value="フロントエンド構成（frontend/src・React + TypeScript + Vite）" style="text;html=1;fontSize=18;fontStyle=1;align=left;verticalAlign=middle;strokeColor=none;fillColor=none;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="16" width="900" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="p5_note" value="サーバー状態は AtmosphereProvider の1箇所で取得し、Context 経由で配る。fetch と URL 組み立ては api/client.ts の外に書かない。" style="text;html=1;fontSize=11;align=left;verticalAlign=middle;strokeColor=none;fillColor=none;fontColor=#5A5A5A;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="44" width="1000" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="p5_entry" value="index.html → main.tsx&#xa;createRoot + StrictMode" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#E8EEF4;strokeColor=#7A8C9E;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="110" width="240" height="54" as="geometry"/>
+                </mxCell>
+                <mxCell id="p5_dash" value="Dashboard.tsx&#xa;AtmosphereProvider で包み、&#xa;DashboardView が activeView を切り替える" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#E8EEF4;strokeColor=#7A8C9E;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="200" width="240" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p5_provider" value="context/AtmosphereProvider.tsx&#xa;/atmosphere と /daily-plan を Promise.all で並行取得&#xa;5分ごとに再取得（document.hidden のときは休む）&#xa;失敗しても前回値を残し error だけ立てる&#xa;AbortController で座標確定時の取り直しを中断" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#EDF3EE;strokeColor=#7C9A82;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="400" y="180" width="330" height="110" as="geometry"/>
+                </mxCell>
+                <mxCell id="p5_ctx" value="context/atmosphereContext.ts&#xa;AtmosphereState { atmosphere, plan, isLoading, error, updatedAt }&#xa;useAtmosphere()" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#EDF3EE;strokeColor=#7C9A82;" parent="1" vertex="1">
+                    <mxGeometry x="400" y="330" width="330" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p5_geo" value="hooks/useGeolocation.ts&#xa;Geolocation API。拒否・タイムアウト時は null &#xa;→ バックエンドの既定地点（野々市）で動く" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#F2EDE3;strokeColor=#A89878;" parent="1" vertex="1">
+                    <mxGeometry x="400" y="70" width="330" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p5_client" value="api/client.ts&#xa;fetchAtmosphere / fetchDailyPlan / fetchHealth&#xa;API_BASE = VITE_API_BASE ?? http://127.0.0.1:8000/api/v1&#xa;ApiError（status を保持。503 の判別に使う）" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#F2EDE3;strokeColor=#A89878;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="820" y="180" width="330" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="p5_types" value="types/weather.ts&#xa;AtmosphereResponse / DailyPlanResponse / EnergyTask&#xa;バックエンドの Pydantic モデルと対応させる" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#F2EDE3;strokeColor=#A89878;" parent="1" vertex="1">
+                    <mxGeometry x="820" y="310" width="330" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p5_backend" value="FastAPI :8000&#xa;/api/v1/atmosphere・/daily-plan・/health" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#E6EFE8;strokeColor=#7C9A82;" parent="1" vertex="1">
+                    <mxGeometry x="820" y="70" width="330" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="p5_hook_group" value="hooks/ — Context を画面用の形に整える" style="swimlane;html=1;startSize=28;fillColor=#FAF7F1;strokeColor=#A89878;fontSize=12;fontStyle=1;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="380" y="440" width="370" height="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="p5_h1" value="useWeatherStress.ts&#xa;気圧ストレスと気象の値を取り出す" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#F2EDE3;strokeColor=#A89878;" parent="p5_hook_group" vertex="1">
+                    <mxGeometry x="20" y="40" width="330" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="p5_h2" value="useEnergySavingTasks.ts&#xa;plan.suggestions を EnergyTask へ変換" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#F2EDE3;strokeColor=#A89878;" parent="p5_hook_group" vertex="1">
+                    <mxGeometry x="20" y="100" width="330" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="p5_comp_group" value="components/weather/ — 表示のみ。計算しない" style="swimlane;html=1;startSize=28;fillColor=#F4F7FA;strokeColor=#8FA3B5;fontSize=12;fontStyle=1;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="440" width="270" height="220" as="geometry"/>
+                </mxCell>
+                <mxCell id="p5_c1" value="WeatherStressWidget.tsx" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#E8EEF4;strokeColor=#7A8C9E;" parent="p5_comp_group" vertex="1">
+                    <mxGeometry x="20" y="40" width="230" height="44" as="geometry"/>
+                </mxCell>
+                <mxCell id="p5_c2" value="EnergySavingTaskWidget.tsx" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#E8EEF4;strokeColor=#7A8C9E;" parent="p5_comp_group" vertex="1">
+                    <mxGeometry x="20" y="96" width="230" height="44" as="geometry"/>
+                </mxCell>
+                <mxCell id="p5_c3" value="PressureChart.tsx&#xa;atmosphere.chart を描画" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fontSize=11;fillColor=#E8EEF4;strokeColor=#7A8C9E;" parent="p5_comp_group" vertex="1">
+                    <mxGeometry x="20" y="152" width="230" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="p5_unused" value="未接続のファイル（2026-08-01 時点）&#xa;・App.tsx — Vite のテンプレートのまま。main.tsx からは参照されていない&#xa;・Login.tsx / Setting.tsx / Healing.tsx — 空ファイル（0行）&#xa;　設定画面の実体は現状 mockup/settings.html 側にある" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fontSize=11;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;fillColor=#F5F5F5;strokeColor=#9E9E9E;dashed=1;fontColor=#666666;" parent="1" vertex="1">
+                    <mxGeometry x="820" y="440" width="330" height="110" as="geometry"/>
+                </mxCell>
+                <mxCell id="p5_memo" value="守るべき前提&#xa;・レベル・ヘッドライン・提案・内訳はサーバーが確定させる。画面側でスコアリングを再実装しない&#xa;　（mockup/index.html にあった JS 版の複製は 2026-08-01 に削除済み）。&#xa;・提案にチェックボックスを付けない。ストリーク・繰り越し・比較・行動を促す通知も作らない（design.md §1.2）。&#xa;・免責事項（§1.3）はフッターに常時表示する。任意ではなく必須のUI要素。&#xa;・None（未計測）と 0（計測して負荷なし）を混同しない。未計測の因子は内訳に出さない。" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fontSize=11;align=left;verticalAlign=top;spacingLeft=10;spacingTop=8;fillColor=#F7F3F3;strokeColor=#B08A8A;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="700" width="1090" height="130" as="geometry"/>
+                </mxCell>
+                <mxCell id="p5_e1" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=0;endArrow=block;strokeColor=#6B7B8C;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" parent="1" source="p5_entry" target="p5_dash" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p5_e2" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=0;endArrow=block;strokeColor=#6B7B8C;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" parent="1" source="p5_dash" target="p5_provider" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p5_e3" value="coords" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=0;endArrow=block;strokeColor=#A89878;fontSize=10;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" parent="1" source="p5_geo" target="p5_provider" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p5_e4" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=0;endArrow=block;strokeColor=#6B7B8C;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" parent="1" source="p5_provider" target="p5_client" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p5_e5" value="HTTP" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=0;endArrow=block;strokeColor=#7C9A82;fontSize=10;exitX=0.5;exitY=0;entryX=0.5;entryY=1;" parent="1" source="p5_client" target="p5_backend" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p5_e6" value="型" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=0;endArrow=block;dashed=1;strokeColor=#A89878;fontSize=10;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" parent="1" source="p5_client" target="p5_types" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p5_e7" value="state を配る" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=0;endArrow=block;strokeColor=#7C9A82;fontSize=10;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" parent="1" source="p5_provider" target="p5_ctx" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p5_e8" value="useAtmosphere()" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=0;endArrow=block;strokeColor=#7C9A82;fontSize=10;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" parent="1" source="p5_ctx" target="p5_hook_group" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p5_e9" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=0;endArrow=block;strokeColor=#8FA3B5;exitX=0;exitY=0.5;entryX=1;entryY=0.5;" parent="1" source="p5_h1" target="p5_c1" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p5_e10" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=0;endArrow=block;strokeColor=#8FA3B5;exitX=0;exitY=0.5;entryX=1;entryY=0.5;" parent="1" source="p5_h2" target="p5_c2" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p5_e11" value="atmosphere.chart を直接渡す" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=1;endArrow=block;strokeColor=#8FA3B5;fontSize=10;exitX=0;exitY=0.75;entryX=1;entryY=0.5;" parent="1" source="p5_ctx" target="p5_c3" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="360" y="383"/>
+                            <mxPoint x="360" y="617"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="p5_e12" value="描画" style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=0;endArrow=block;strokeColor=#8FA3B5;fontSize=10;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" parent="1" source="p5_dash" target="p5_comp_group" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

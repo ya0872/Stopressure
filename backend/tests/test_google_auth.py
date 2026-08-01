@@ -114,7 +114,7 @@ def test_valid_client_id_is_accepted():
 
 
 @pytest.mark.parametrize("bad,hint", [
-    ("1030352529567-  02h2sas990fb.apps.googleusercontent.com", "空白"),          # 実際に起きた事故
+    ("123456789012-  abcdefghijkl.apps.googleusercontent.com", "空白"),          # 実際に起きた事故と同じ形
     ("123456789012-abc@def.apps.googleusercontent.com", "使えない文字"),
     ("123456789012-abcdef.apps.googleusercontent.co", "末尾"),
     ("123456789012-ABCDEF.apps.googleusercontent.com", "大文字"),
