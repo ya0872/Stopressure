@@ -5,11 +5,6 @@
 フェーズ2で気象庁アメダス（10分粒度の実測）を併用する。
 
 APIキー不要・非商用無料。出典表示の義務は無いが、気象庁を併用する段階では必要になる。
-
-プロキシについて:
-    httpx は既定で環境変数（HTTPS_PROXY / HTTP_PROXY）を見る。main.py が backend/.env を
-    読み込んで環境変数に載せているため、学内プロキシ配下でもそのまま通る。
-    学外では .env のプロキシを空にしないと、逆に接続できなくなる。
 """
 from __future__ import annotations
 
@@ -92,7 +87,7 @@ def fetch(latitude: float, longitude: float, *, now: datetime | None = None) -> 
         res.raise_for_status()
         payload = res.json()
     except httpx.HTTPError as e:
-        # 学内プロキシ未設定・学外でのプロキシ残存など、原因が環境側にあることが多い。
+        # 原因が環境側にあることが多い。
         # 呼び出し側でフォールバックを判断できるよう専用の例外に包む
         raise AtmosphereUnavailable(f"Open-Meteoに接続できませんでした: {e}") from e
 

@@ -144,3 +144,33 @@ section { margin-bottom: 2.75rem; }
 
 .widget-note { font-size: 0.75rem; color: var(--text-faint); margin-top: 0.75rem; line-height: 1.6; }
 .widget-note.warn { color: hsl(30, 70%, 55%); }
+
+/* ---------- 体力予算の内訳（mockup/index.html と同じ見た目） ---------- */
+.factor { margin-bottom: 0.9rem; }
+.factor-head { display: flex; justify-content: space-between; align-items: baseline; font-size: 0.85rem; }
+.factor-cost { color: var(--text-dim); font-variant-numeric: tabular-nums; font-size: 0.8rem; }
+.factor-bar { height: 3px; background: var(--bg-sunken); border-radius: 2px; margin-top: 0.4rem; overflow: hidden; }
+.factor-bar > i { display: block; height: 100%; background: var(--accent-dim); transition: width var(--dur) var(--ease); }
+.factor-detail { font-size: 0.72rem; color: var(--text-faint); margin-top: 0.25rem; }
+
+/* ---------- 取得状況の通知 ----------
+   警告色は使わない。取得の失敗はユーザーの落ち度ではないため（設計書 §1.3 の趣旨） */
+.notice {
+  background: var(--bg-sunken);
+  border: 1px solid var(--border);
+  border-left: 2px solid var(--accent-dim);
+  border-radius: 3px;
+  padding: 0.85rem 1rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.75rem;
+  line-height: 1.8;
+  color: var(--text-dim);
+}
+.notice code { font-size: 0.72rem; color: var(--text-faint); }
+
+/* ---------- 免責事項（常時表示。設計書 §1.4 実装必須） ---------- */
+.disclaimer {
+  margin-top: 3rem; padding: 1rem 1.1rem;
+  background: var(--bg-sunken); border: 1px solid var(--border); border-radius: 4px;
+  font-size: 0.72rem; line-height: 1.9; color: var(--text-faint);
+}

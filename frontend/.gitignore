@@ -23,7 +23,8 @@ dist-ssr
 *.sln
 *.sw?
 
-# 環境変数ファイルをGitの管理から外す
+# 環境変数ファイルをGitの管理から外す（.env.example だけは追跡する）
+# 行末にコメントを書くと除外パターンの一部として解釈されるため、書かないこと
 .env
 .env.*
-!.env.example # (※)
+!.env.example

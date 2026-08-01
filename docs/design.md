@@ -397,7 +397,7 @@ def estimated_national_capacity(stress: float) -> int:
 
 `/atmosphere` と `/daily-plan` は緯度経度を `?lat=&lon=` で受け取る。省略時は野々市市（36.5297, 136.6094）。ブラウザの Geolocation API から渡す想定で、拒否された場合は既定値で動く（§11 #7）。
 
-**通信断時の挙動**: Open-Meteo に到達できない場合、`atmosphere_snapshot` の直近6時間以内の記録から復元し、レスポンスに `stale: true` を付けて返す。復元もできない場合のみ 503 を返す。学内プロキシの設定漏れで画面が真っ白になるのを避けるため（§10）。
+**通信断時の挙動**: Open-Meteo に到達できない場合、`atmosphere_snapshot` の直近6時間以内の記録から復元し、レスポンスに `stale: true` を付けて返す。復元もできない場合のみ 503 を返す。通信が落ちるたびに画面が真っ白になるのを避けるため（§10）。
 
 ### 5.1 主要レスポンス例
 
@@ -676,7 +676,6 @@ https://www.jma.go.jp/bosai/amedas/data/point/56227/YYYYMMDD_HH.json  # 地点�
 | VOICEVOX / ローカルLLM が未起動 | テキスト表示・定型文にフォールバック |
 | 気象庁APIの仕様変更 | 非公式APIのため、Open-Meteo を主系統に置き気象庁は補助に留める |
 | 気圧の閾値が体感と合わない | `thresholds.yaml` で即時調整。F-15 で自動調整 |
-| 学内プロキシで外部通信が失敗する | `CLAUDE.md` の "Known environment issue: proxy" を参照。ホスト名は公開リポジトリには書かない |
 
 ---
 

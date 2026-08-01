@@ -1,11 +1,3 @@
-"""しきい値と提案プールの読み込み。
-
-数値（thresholds.yaml）と文言（levels.yaml / suggestions.yaml）をコードから分離しておく。
-F-15（気圧耐性の個人化）で係数を書き換えるとき、ロジックに触れずに済ませるため。
-
-読み込み結果はプロセス内でキャッシュする。ローカル単一ユーザー運用のため、
-編集したら再起動する運用でよい（uvicorn --reload なら自動で反映される）。
-"""
 from __future__ import annotations
 
 from functools import lru_cache

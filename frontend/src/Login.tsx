@@ -5,7 +5,11 @@ import { GoogleLogin } from "@react-oauth/google";
 import { jwtDecode } from "jwt-decode";
 import type { CredentialResponse } from "@react-oauth/google";
 
-export const Login = () => {
+interface LoginProps {
+  onLoginSuccess?: (credentialResponse: CredentialResponse, decoded: unknown) => void;
+}
+
+export const Login = ({ onLoginSuccess }: LoginProps) => {
     /**ログイン成功時処理 */
     const handleLoginSuccess = (credentialResponse: CredentialResponse) => {
         if (!credentialResponse.credential) {
@@ -13,6 +17,9 @@ export const Login = () => {
         }
         const decoded = jwtDecode(credentialResponse.credential);
         console.log("ログイン成功:", decoded);
+        if (onLoginSuccess) {
+            onLoginSuccess(credentialResponse, decoded);
+        }
     };
 
     /**ログイン失敗時処理 */
