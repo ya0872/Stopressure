@@ -18,7 +18,6 @@ from .db import init_db
 from .routers import atmosphere, auth_google, context, generate, plan, reflection, settings
 
 # 起動ディレクトリに依存しないよう backend/.env を絶対パスで読み込む。
-# プロキシ設定（HTTPS_PROXY）もここで環境変数に載り、Gemini SDK がそのまま利用する。
 load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
 # フロントは別ポートで動くためCORSが必要。既定はモックアップとViteの開発サーバー。

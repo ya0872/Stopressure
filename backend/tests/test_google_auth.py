@@ -187,9 +187,9 @@ def test_verify_client_requires_registration():
 
 
 def test_verify_client_reports_network_failure(configured, monkeypatch):
-    """学内プロキシ等で到達できない場合も、原因をそのまま見せる。"""
+    """ネットワーク側の事情で到達できない場合も、原因をそのまま見せる。"""
     def boom(*a, **k):
-        raise RuntimeError("proxy timeout")
+        raise RuntimeError("connection timeout")
 
     monkeypatch.setattr("httpx.post", boom)
     res = client.post("/api/v1/settings/google/test")

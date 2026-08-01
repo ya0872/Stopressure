@@ -4,28 +4,31 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository status
 
-This repository holds **低気圧のすゝめ (Atmosphere Studio)**: the design document, a working
-mockup, and a FastAPI backend. Done: phase 1 (weather → pressure stress → energy level →
-suggestions), the Gemini integration, and the phase-3 Google integration (OAuth + Calendar/Tasks/
-Gmail, backend only). There is no frontend build yet — the mockup is still the only UI, and it does
-not yet call `/atmosphere`, `/daily-plan`, `/context`, or the Google endpoints.
+This repository holds **低気圧のすゝめ (Atmosphere Studio)**: the design document, the screens, and a
+FastAPI backend. Done: phase 1 (weather → pressure stress → energy level → suggestions), the Gemini
+integration, and the phase-3 Google integration (OAuth + Calendar/Tasks/Gmail). There is no
+frontend build yet — the pages under `mockup/` are the only UI, but they now run on live data.
 
 - `docs/design.md` — the design document. **Read it before writing any code.**
-- `mockup/index.html` — dependency-free single-file mockup. Scenario-driven, no live data. This is
-  the design-agreement artifact; keep it that way.
-- `mockup/live.html` — dependency-free page that renders **real** backend data (`/daily-plan`,
-  `/atmosphere`, `/context`, `/settings/google`). Use it to eyeball a backend change without
-  disturbing the mockup. Not a product screen.
+- `mockup/index.html` — the product screen. Dependency-free single file, **live data**: it calls
+  `/daily-plan`, `/atmosphere`, `/context`, `/settings/google`, `/reflection`, `/settings/gemini`
+  and re-fetches every 5 minutes. It computes nothing — level, headline, suggestions and the budget
+  breakdown all come from the backend. Degrades to an explanatory notice when the backend is down,
+  and to weather-only factors when Google is not linked.
+- `mockup/live.html` — raw-value inspection page for the same endpoints. Overlaps index.html now
+  that index.html is live; keep it only as long as the flat `/context` + `/settings/google` dump is
+  useful for debugging. Not a product screen.
 - `mockup/settings.html` — 設定画面 (§8.1). Registers the Gemini API key and the Google OAuth
   client, starts/clears the Google link. Secrets go in via `type=password`, are cleared from the
   field after saving, and are never echoed back — the backend has no endpoint that returns them.
 - `backend/` — FastAPI + SQLite. `pytest` from `backend/` runs the suite.
 
-**The scoring algorithm lives in three places and they must stay in sync**:
-`backend/app/services/{pressure,budget,planner}.py`, `backend/app/config/thresholds.yaml`, and the
-`TH` / `pressureStress` / `energyBudget` / `toLevel` block in `mockup/index.html`.
-`backend/tests/test_pressure.py` pins the backend against the mockup's documented scenario values,
-but nothing can pin the mockup itself — change it by hand when the algorithm moves.
+**The scoring algorithm now lives in two places**: `backend/app/services/{pressure,budget,planner}.py`
+and `backend/app/config/thresholds.yaml`. It used to be mirrored in JS inside `mockup/index.html`;
+that copy was deleted on 2026-08-01 when the page went live, so there is nothing to keep in sync any
+more. **Do not reintroduce a JS copy of the scoring rules** — the page is a renderer.
+`backend/tests/_scenarios.py` still carries the five weather scenarios (typhoon, rainy, bomb, front,
+clear) as test fixtures with pinned stress values; they are no longer mirrored by any UI.
 
 ## Product constraints that are not inferable from the code
 
@@ -136,29 +139,4 @@ Get-CimInstance Win32_Process -Filter "Name = 'python.exe'" |
   ForEach-Object { Stop-Process -Id $_.ProcessId -Force }
 ```
 
-## Known environment issue: proxy
 
-The development machine sits behind a campus HTTP proxy. Raw TCP to the outside fails; only proxied
-HTTPS gets through. `git push` and `npm install` therefore time out (`ETIMEDOUT` /
-`Could not connect to server`) unless the proxy is passed explicitly.
-
-The proxy host itself is intentionally **not** written in this repository (it is internal network
-detail and this repo is public). Read the actual value off the machine with the .NET call below, or
-from your own local notes.
-
-The proxy is NOT discoverable from `git config`, `netsh winhttp show proxy`, or the WinINET registry
-keys — all of them report "no proxy". It only shows up via .NET:
-
-```powershell
-[System.Net.WebRequest]::GetSystemWebProxy().GetProxy("https://github.com").AbsoluteUri
-```
-
-Diagnostic tell: `Test-NetConnection github.com -Port 443` fails while
-`Invoke-WebRequest https://github.com` returns 200.
-
-```powershell
-# このシェル限りでプロキシ経由にする（ホストは上の .NET 呼び出しで得た値を入れる）
-$env:HTTPS_PROXY="http://<proxy-host>:8080"; $env:HTTP_PROXY=$env:HTTPS_PROXY
-```
-
-学外ではこのプロキシは使えないため、恒久設定にする場合は解除手順とセットで扱うこと。

@@ -55,8 +55,8 @@ def get_atmosphere(
     try:
         obs = atmosphere.current(lat, lon)
     except AtmosphereUnavailable as e:
-        # 保存済みの値も無い場合だけここに来る。プロキシ設定が原因のことが多いため
-        # メッセージをそのまま見せて、環境側の切り分けができるようにする
+        # 保存済みの値も無い場合だけここに来る。原因が環境側にあることが多いため
+        # メッセージをそのまま見せて、切り分けができるようにする
         raise HTTPException(status_code=503, detail=str(e)) from e
 
     return AtmosphereResponse(
