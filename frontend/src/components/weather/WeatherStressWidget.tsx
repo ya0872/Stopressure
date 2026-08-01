@@ -28,7 +28,8 @@ export const WeatherStressWidget = () => {
   const s = data.stress;
 
   return (
-    <div className="widget-box">
+    <div className="widget-box"
+    style={{ borderRadius: '20px' }}>
       <div className="widget-header">
         <h3 className="widget-title">現在の環境ストレス</h3>
         {/* 段階に丸めず指数をそのまま出す。丸め方の定義はサーバー側にしか無い */}

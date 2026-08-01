@@ -15,7 +15,8 @@ export const EnergySavingTaskWidget = () => {
       <div>
         {tasks.map((task) => (
           // チェックボックス・完了操作は付けないこと（docs/design.md §1.2）
-          <div key={task.id} className="suggest">
+          <div key={task.id} className="suggest"
+            style={{ borderRadius: '20px' }}>
             <div className="suggest-text">{task.title}</div>
             {task.description && <div className="suggest-reason">{task.description}</div>}
           </div>

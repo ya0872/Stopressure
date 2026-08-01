@@ -6,7 +6,7 @@ import { WeatherStressWidget } from './components/weather/WeatherStressWidget';
 import { EnergySavingTaskWidget } from './components/weather/EnergySavingTaskWidget';
 import { PressureChart } from './components/weather/PressureChart';
 
-type ViewName = 'home' | 'pressure' | 'reflect' | 'settings';
+type ViewName = 'home' | 'enviroment' | 'reflect' | 'settings';
 
 /** 省エネレベルごとの色相。mockup/index.html と同じ値に揃える */
 const LEVEL_HUE: Record<number, number> = { 1: 150, 2: 190, 3: 215, 4: 245, 5: 272 };
@@ -53,7 +53,7 @@ const DashboardView = () => {
 
   const tabs: { key: ViewName; label: string }[] = [
     { key: 'home', label: '今日' },
-    { key: 'pressure', label: '気圧' },
+    { key: 'enviroment', label: '環境' },
     { key: 'reflect', label: '夜の吐き出し' },
     { key: 'settings', label: '設定' },
   ];
@@ -122,28 +122,6 @@ const DashboardView = () => {
           </div>
         </div>
 
-        <WeatherStressWidget />
-        <EnergySavingTaskWidget />
-
-        {/* 未連携は正常な状態。連携を促す文言にはしない（§1.2 の督促の禁止） */}
-        {plan && !plan.google_context_used && (
-          <p className="widget-note">
-            Googleと連携していないため、天候の要素のみで算定しています。
-          </p>
-        )}
-      </div>
-
-      {/* ========== 気圧 ========== */}
-      <div className={`view ${activeView === 'pressure' ? 'active' : ''}`} id="view-pressure">
-        <section>
-          <div className="sec-title">気圧の推移（過去24時間 〜 予報12時間）</div>
-          {atmosphere ? (
-            <PressureChart chart={atmosphere.chart} />
-          ) : (
-            <p className="widget-note">気象データを取得できていません。</p>
-          )}
-        </section>
-
         <section>
           <div className="sec-title">体力予算の内訳</div>
           {plan && plan.breakdown.length > 0 ? (
@@ -173,6 +151,28 @@ const DashboardView = () => {
             </p>
           )}
         </section>
+
+        <EnergySavingTaskWidget />
+
+        {/* 未連携は正常な状態。連携を促す文言にはしない（§1.2 の督促の禁止） */}
+        {plan && !plan.google_context_used && (
+          <p className="widget-note">
+            Googleと連携していないため、天候の要素のみで算定しています。
+          </p>
+        )}
+      </div>
+
+      {/* ========== 環境 ========== */}
+      <div className={`view ${activeView === 'enviroment' ? 'active' : ''}`} id="view-pressure">
+        <section>
+          <div className="sec-title">気圧の推移（過去24時間 〜 予報12時間）</div>
+          {atmosphere ? (
+            <PressureChart chart={atmosphere.chart} />
+          ) : (
+            <p className="widget-note">気象データを取得できていません。</p>
+          )}
+        </section>
+        <WeatherStressWidget />
       </div>
 
       {/* ========== 夜の吐き出し ========== */}
