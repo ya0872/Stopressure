@@ -5,8 +5,8 @@ cd frontend
 npm install
 npm run dev
 ```
-## バックエンド
+## バックエンド(確認用（モックアップ）なので、本番時には変更してください)
 ```
-cd backend
-python -m http.server 8765 --directory C:\Users\liang\Documents\GitHub\test\mockup --bind ::
+cd mockup
+python -m http.server 8765 --directory ..\mockup
 ```

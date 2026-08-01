@@ -14,6 +14,14 @@ from .db import get_conn
 KEY_GEMINI_API = "gemini.api_key"      # 暗号化して保存する
 KEY_GEMINI_MODEL = "gemini.model"      # 平文で保存する
 
+# Google OAuth クライアント（docs/design.md §7.2）。
+# client_id は認可URLに載って利用者にも見えるため平文でよい。secret は暗号化する。
+KEY_GOOGLE_CLIENT_ID = "google.client_id"
+KEY_GOOGLE_CLIENT_SECRET = "google.client_secret"
+# 連携済みでも「予算への反映だけ止める」ためのフラグ。
+# §7.2 が求める「ローカル完結を厳守する場合に F-05/F-06/F-18 を落とす」切替に相当する
+KEY_GOOGLE_USE_CONTEXT = "google.use_context"
+
 # モデル未設定時の既定値。設定画面から変更できる
 DEFAULT_GEMINI_MODEL = "gemini-2.5-flash"
 
@@ -94,3 +102,18 @@ def resolve_gemini_api_key() -> str | None:
 def resolve_gemini_model() -> str:
     """使用するモデル名を解決する。"""
     return get_plain(KEY_GEMINI_MODEL) or DEFAULT_GEMINI_MODEL
+
+
+def resolve_google_client() -> tuple[str | None, str | None]:
+    """Google OAuth クライアントの (client_id, client_secret) を解決する。
+
+    Gemini APIキーと同じく、設定画面で登録した値を優先し、無ければ環境変数を使う。
+    """
+    client_id = get_plain(KEY_GOOGLE_CLIENT_ID) or os.getenv("GOOGLE_CLIENT_ID") or None
+    secret = get_secret(KEY_GOOGLE_CLIENT_SECRET) or os.getenv("GOOGLE_CLIENT_SECRET") or None
+    return client_id, secret
+
+
+def google_context_enabled() -> bool:
+    """カレンダー・メール・ToDoを体力予算に反映してよいか。既定は有効。"""
+    return get_plain(KEY_GOOGLE_USE_CONTEXT) != "0"
