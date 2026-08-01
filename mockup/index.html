@@ -41,7 +41,6 @@
     --text:      #2e2d2a;
     --text-dim:  #6f6d67;
     --text-faint:#9b9890;
-    --accent-dim: hsl(215, 20%, 72%);
   }
 }
 
@@ -176,7 +175,7 @@ button.act.rec { color: var(--accent); }
   background: var(--bg-raised); border: 1px solid var(--border);
   border-left: 2px solid var(--accent); border-radius: 3px;
   font-size: 1rem; line-height: 2;
-  opacity: 0; transform: none;
+  opacity: 0;
   transition: opacity var(--dur) var(--ease);
 }
 .reply.shown { opacity: 1; }
@@ -192,12 +191,12 @@ button.act.rec { color: var(--accent); }
   background: var(--bg-sunken); border: 1px solid var(--border); border-radius: 4px;
   font-size: 0.72rem; line-height: 1.9; color: var(--text-faint);
 }
-.mocknote { font-size: 0.7rem; color: var(--text-faint); margin-top: 0.6rem; font-style: normal; }
+.mocknote { font-size: 0.7rem; color: var(--text-faint); margin-top: 0.6rem; }
 </style>
 </head>
 <body>
 
-<!-- モックアップ専用: 4つのシナリオで全レベルを確認できる -->
+<!-- モックアップ専用: 5つのシナリオで全レベルを確認できる -->
 <div class="mockbar">
   <div class="wrap">
     <label for="scenario">MOCKUP / シナリオ</label>
@@ -327,9 +326,9 @@ button.act.rec { color: var(--accent); }
    ============================================================ */
 const TH = {
   // 気圧ストレス: 各項の係数と上限点
-  p6:  { coef: 10, cap: 40 },  // 直近6時間の低下
-  p24: { coef: 3,  cap: 30 },  // 直近24時間の低下
-  pNext6: { coef: 5, cap: 20 },// 予報6時間の低下（先行評価）
+  p6:  { coef: 10, cap: 40 },   // 直近6時間の低下
+  p24: { coef: 3,  cap: 30 },   // 直近24時間の低下
+  pNext6: { coef: 5, cap: 20 }, // 予報6時間の低下（先行評価）
   pAbs: { base: 1000, cap: 10 },// 絶対値の補助評価
   // 体力予算: 各因子の重みと上限点
   weather: 0.40,
@@ -389,9 +388,9 @@ function makeSeries(start, end, curve) {
   for (let i = 0; i < 36; i++) {
     const t = i / 35;
     let e;
-    if (curve === "late")      e = Math.pow(t, 2.4);   // 後半で急降下
-    else if (curve === "early")e = 1 - Math.pow(1 - t, 2.4); // 前半で下がりきる
-    else                       e = t;                  // 直線的
+    if (curve === "late")       e = Math.pow(t, 2.4);          // 後半で急降下
+    else if (curve === "early") e = 1 - Math.pow(1 - t, 2.4);  // 前半で下がりきる
+    else                        e = t;                         // 直線的
     // ±0.3hPa の微小な揺らぎを加えて実測らしくする（乱数は使わず再現性を保つ）
     const noise = Math.sin(i * 1.7) * 0.3;
     arr.push(+(start + (end - start) * e + noise).toFixed(1));
