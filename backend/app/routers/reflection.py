@@ -1,0 +1,94 @@
+"""夜の吐き出しへの応答を生成する。
+
+このエンドポイントだけが自由文を受け取る。/generate 側に自由文フィールドを足さず
+専用の入口を分けているのは、「どこからユーザーの言葉が外部へ出るのか」を1箇所に
+閉じ込めるため。監査するときはこのファイルだけを見ればよい。
+
+送信先について:
+  版0.2では「ローカルLLM固定」としていたが、利用者の判断により Gemini を使う構成に変更した
+  （docs/design.md §3.3）。入力内容は Google に送信される。画面側でその旨を明示すること。
+"""
+from __future__ import annotations
+
+from datetime import datetime, timezone
+
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel, Field
+
+from .. import settings_store as store
+from ..db import get_conn
+from ..services import gemini
+
+router = APIRouter(prefix="/reflection", tags=["reflection"])
+
+# 設計書 §4.7 の制約をそのままシステムプロンプトにする
+SYSTEM_PROMPT = """あなたはユーザーを全面的に肯定する聞き役です。以下を厳守してください。
+- 助言、提案、励まし（「明日は頑張って」等）を一切含めない
+- 原因をユーザーの努力不足に帰属させない
+- 気象条件を根拠に「仕方がなかった」と外部帰属させる
+- 2〜3文、100文字以内で応答する
+- 「無事に過ごせただけで満点」という趣旨を必ず含める
+- 質問を返さない。会話を続けようとしない"""
+
+# 生成に失敗したときに返す文。UIを空にしないための最低保証
+FALLBACK_REPLIES = [
+    "無事に一日を終えられただけで満点です。気圧がこれだけ動いた日に、それ以上は誰にもできません。",
+    "できなかったのではなく、体が休むことを選んだ日です。今日を越えられたことが、そのまま成果です。",
+]
+
+
+class ReflectionRequest(BaseModel):
+    text: str = Field(min_length=1, max_length=2000, description="吐き出した内容")
+    level: int | None = Field(default=None, ge=1, le=5, description="その日の省エネレベル")
+    felt: int | None = Field(default=None, ge=1, le=3, description="体感 1:つらい 2:普通 3:平気")
+
+
+class ReflectionResponse(BaseModel):
+    reply: str
+    model: str | None = Field(default=None, description="生成に使ったモデル。定型文の場合は null")
+    fallback: bool = Field(description="生成に失敗して定型文を返したか")
+
+
+def _build_prompt(req: ReflectionRequest) -> str:
+    level_note = (
+        f"今日の省エネレベルは{req.level}（1が平常、5が完全休止）でした。"
+        if req.level
+        else ""
+    )
+    return f"{level_note}次の言葉を受け止めてください。\n\n{req.text}"
+
+
+def _save(req: ReflectionRequest, reply: str) -> None:
+    now = datetime.now(timezone.utc)
+    conn = get_conn()
+    try:
+        conn.execute(
+            "INSERT INTO reflection (date, user_text, reply_text, level, felt, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            (now.date().isoformat(), req.text, reply, req.level, req.felt, now.isoformat()),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+@router.post("", response_model=ReflectionResponse)
+def create_reflection(req: ReflectionRequest) -> ReflectionResponse:
+    """吐き出しを受け取り、全肯定の応答を返す。"""
+    key = store.resolve_gemini_api_key()
+    if not key:
+        raise HTTPException(
+            status_code=409,
+            detail="Gemini APIキーが未設定です。設定画面から登録してください",
+        )
+
+    try:
+        res = gemini.generate(key, store.resolve_gemini_model(), _build_prompt(req), system=SYSTEM_PROMPT)
+        reply, model, fallback = res.text, res.model, False
+    except (gemini.GeminiCallFailed, gemini.GeminiSDKMissing):
+        # 通信断や安全フィルタで落ちても、ユーザーには必ず肯定を返す。
+        # ここで500を返すと「吐き出したのに無視された」体験になるため握る
+        reply, model, fallback = FALLBACK_REPLIES[0], None, True
+
+    _save(req, reply)
+    return ReflectionResponse(reply=reply, model=model, fallback=fallback)
