@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>低気圧のすゝめ — Atmosphere Studio（モックアップ）</title>
+<title>低気圧のすゝめ — Atmosphere Studio</title>
 <style>
 /* ============================================================
    デザイン方針（docs/design.md §8.2）
@@ -59,19 +59,32 @@ body {
 
 .wrap { max-width: 680px; margin: 0 auto; padding: 0 1.25rem; }
 
-/* ---------- モックアップ専用のシナリオ切替バー ---------- */
-.mockbar {
+/* ---------- 取得状況バー ----------
+   実データを出す画面なので、いつ時点の値なのかを常に見せる */
+.statusbar {
   background: var(--bg-sunken);
   border-bottom: 1px solid var(--border);
   padding: 0.6rem 0;
   font-size: 0.75rem;
 }
-.mockbar .wrap { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
-.mockbar label { color: var(--text-faint); letter-spacing: 0.08em; }
-.mockbar select {
-  background: var(--bg-raised); color: var(--text);
-  border: 1px solid var(--border); border-radius: 4px;
-  padding: 0.3rem 0.5rem; font-family: inherit; font-size: 0.75rem;
+.statusbar .wrap { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+.statusbar #st-updated { color: var(--text-faint); }
+.statusbar .spacer { flex: 1; }
+.linkbtn {
+  background: none; border: none; color: var(--text-dim);
+  font-family: inherit; font-size: 0.75rem; cursor: pointer;
+  padding: 0.2rem 0.4rem; border-bottom: 1px solid transparent;
+  transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+.linkbtn:hover { color: var(--text); border-bottom-color: var(--accent-dim); }
+.linkbtn[disabled] { opacity: 0.4; cursor: default; }
+
+/* 取得に失敗したときの案内。画面を空にしないための受け皿 */
+.alert {
+  background: var(--bg-sunken); border: 1px solid var(--border);
+  border-left: 2px solid var(--accent-dim); border-radius: 3px;
+  padding: 0.85rem 1rem; margin-bottom: 1.75rem;
+  font-size: 0.78rem; line-height: 1.9; color: var(--text-dim);
 }
 
 /* ---------- ヘッダー ---------- */
@@ -138,6 +151,28 @@ section { margin-bottom: 2.75rem; }
 .factor-bar > i { display: block; height: 100%; background: var(--accent-dim); transition: width var(--dur) var(--ease); }
 .factor-detail { font-size: 0.72rem; color: var(--text-faint); margin-top: 0.25rem; }
 
+/* ---------- 今日の外的負荷（カレンダー / メール / ToDo） ----------
+   警告色・赤字は使わない。未達成の負債に見せないため（設計書 §1.3） */
+.ctx { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.6rem; }
+.ctx-card {
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 0.9rem 0.8rem;
+  text-align: center;
+}
+.ctx-label { font-size: 0.7rem; letter-spacing: 0.08em; color: var(--text-faint); }
+.ctx-value {
+  font-size: 1.6rem; font-weight: 200; line-height: 1.2; margin-top: 0.35rem;
+  color: var(--accent); font-variant-numeric: tabular-nums;
+  transition: color var(--dur) var(--ease);
+}
+.ctx-unit { font-size: 0.75rem; color: var(--text-dim); margin-left: 0.15rem; }
+.ctx-sub { font-size: 0.68rem; color: var(--text-faint); margin-top: 0.3rem; line-height: 1.6; }
+.ctx-note { font-size: 0.72rem; color: var(--text-faint); margin-top: 0.85rem; line-height: 1.9; }
+/* 狭い画面では縦に積む */
+@media (max-width: 420px) { .ctx { grid-template-columns: 1fr; } }
+
 /* ---------- 気圧グラフ ---------- */
 .chart { background: var(--bg-raised); border: 1px solid var(--border); border-radius: 4px; padding: 1rem 0.5rem 0.5rem; }
 .chart svg { width: 100%; height: auto; display: block; }
@@ -185,6 +220,9 @@ button.act.rec { color: var(--accent); }
 .row .val { color: var(--text-dim); font-size: 0.8rem; }
 .pill { font-size: 0.68rem; padding: 0.15rem 0.5rem; border: 1px solid var(--border); border-radius: 99px; color: var(--text-faint); }
 .pill.ok { color: var(--accent); border-color: var(--accent-dim); }
+/* 警告・失敗も彩度は上げない。赤で不安を煽らない（設計書 §8.2 低刺激） */
+.pill.warn { color: var(--text-dim); border-color: var(--text-faint); }
+.pill.ng { color: var(--text-dim); border-style: dashed; }
 
 /* 設定フォーム（バックエンド連携） */
 .field { display: flex; flex-direction: column; gap: 0.4rem; padding: 0.9rem 0; border-bottom: 1px solid var(--border); }
@@ -209,12 +247,15 @@ button.act.rec { color: var(--accent); }
 </head>
 <body>
 
-<!-- モックアップ専用: 5つのシナリオで全レベルを確認できる -->
-<div class="mockbar">
+<!-- 取得状況。値がいつ時点のものかを常に見せる -->
+<div class="statusbar">
   <div class="wrap">
-    <label for="scenario">MOCKUP / シナリオ</label>
-    <select id="scenario"></select>
-    <span id="scenario-desc" style="color:var(--text-faint)"></span>
+    <span class="pill" id="st-backend">確認中…</span>
+    <span class="pill" id="st-weather">—</span>
+    <span id="st-updated"></span>
+    <span class="spacer"></span>
+    <button class="linkbtn" id="btn-locate">現在地を使う</button>
+    <button class="linkbtn" id="btn-reload">再取得</button>
   </div>
 </div>
 
@@ -230,6 +271,9 @@ button.act.rec { color: var(--accent); }
     <button data-view="reflect">夜の吐き出し</button>
     <button data-view="settings">設定</button>
   </nav>
+
+  <!-- 取得に失敗したときだけ出る。成功時は hidden -->
+  <p class="alert" id="alert" hidden></p>
 
   <!-- ========== ホーム ========== -->
   <div class="view active" id="view-home">
@@ -248,9 +292,19 @@ button.act.rec { color: var(--accent); }
       <div id="suggestions"></div>
     </section>
 
+    <!-- カレンダー / メール / ToDo（F-05 / F-06 / F-18）。
+         出すのは件数と時間だけ。予定のタイトルもメールの件名も取得していない（設計書 §7.2）。
+         「やることリスト」ではなく「今日の余裕が少ない理由」として並べる（設計書 §1.2） -->
+    <section>
+      <div class="sec-title">今日かかっている外的負荷</div>
+      <div class="ctx" id="context"></div>
+      <p class="ctx-note" id="context-note"></p>
+    </section>
+
     <section>
       <div class="sec-title">体力予算の内訳</div>
       <div id="breakdown"></div>
+      <p class="ctx-note" id="breakdown-note"></p>
     </section>
   </div>
 
@@ -301,12 +355,13 @@ button.act.rec { color: var(--accent); }
   <!-- ========== 設定 ========== -->
   <div class="view" id="view-settings">
     <section>
-      <div class="sec-title">現在の状況（モックアップでは固定値）</div>
-      <div class="row"><span>位置情報</span><span class="val" id="set-loc"></span></div>
-      <div class="row"><span>起床時刻</span><span class="val" id="set-wake"></span></div>
-      <div class="row"><span>就寝時刻</span><span class="val" id="set-bed"></span></div>
+      <div class="sec-title">現在の状況</div>
+      <div class="row"><span>位置情報</span><span class="val" id="set-loc">—</span></div>
+      <div class="row"><span>起床時刻</span><span class="val">未取得（フェーズ2 / F-04）</span></div>
+      <div class="row"><span>就寝時刻</span><span class="val">未取得（フェーズ2 / F-04）</span></div>
       <div class="row"><span>予定の拘束時間</span><span class="val" id="set-busy"></span></div>
       <div class="row"><span>要対応メール</span><span class="val" id="set-mail"></span></div>
+      <div class="row"><span>対応待ちのToDo</span><span class="val" id="set-task"></span></div>
     </section>
 
     <section>
@@ -347,10 +402,17 @@ button.act.rec { color: var(--accent); }
 
     <section>
       <div class="sec-title">その他の連携</div>
-      <div class="row"><span>Google カレンダー</span><span class="pill">未接続（フェーズ3）</span></div>
-      <div class="row"><span>Gmail</span><span class="pill">未接続（フェーズ3）</span></div>
+      <div class="row"><span>Google カレンダー</span><span class="pill" id="gg-cal">—</span></div>
+      <div class="row"><span>Google ToDo</span><span class="pill" id="gg-task">—</span></div>
+      <div class="row"><span>Gmail</span><span class="pill" id="gg-mail">—</span></div>
       <div class="row"><span>Ollama（ローカルLLM）</span><span class="pill">未接続（フェーズ4）</span></div>
       <div class="row"><span>VOICEVOX ENGINE</span><span class="pill">未接続（フェーズ4）</span></div>
+      <p class="mocknote">
+        取得するのは「予定の拘束時間」「未読の重要メールの件数」「対応待ちのToDoの件数」だけです。
+        予定のタイトル、メールの件名・本文、ToDoの内容は取得しません（設計書 §7.2）。
+        未連携でもアプリは成立し、その場合はこの3項目が内訳から消えるだけです。
+        連携の開始・解除は <a href="settings.html" style="color:var(--text-dim)">settings.html</a> から行います。
+      </p>
     </section>
 
     <section>
@@ -372,285 +434,188 @@ button.act.rec { color: var(--accent); }
 "use strict";
 
 /* ============================================================
-   1. しきい値定義（実装時は backend/app/config/thresholds.yaml に外出し）
+   1. バックエンドとの通信
+   この画面は実データを表示する。気圧ストレス・体力予算・省エネレベル・提案の
+   算出はすべてバックエンド（services/{pressure,budget,planner}.py）にあり、
+   ここは受け取った値を描くことに専念する
    ============================================================ */
-const TH = {
-  // 気圧ストレス: 各項の係数と上限点
-  p6:  { coef: 10, cap: 40 },   // 直近6時間の低下
-  p24: { coef: 3,  cap: 30 },   // 直近24時間の低下
-  pNext6: { coef: 5, cap: 20 }, // 予報6時間の低下（先行評価）
-  pAbs: { base: 1000, cap: 10 },// 絶対値の補助評価
-  // 体力予算: 各因子の重みと上限点
-  weather: 0.40,
-  temp: { coef: 2, cap: 10 },
-  humid:{ base: 75, cap: 10 },
-  sleep:{ ideal: 7, coef: 5, cap: 20 },
-  busy: { coef: 2, cap: 15 },
-  mail: { coef: 1, cap: 5 },
-  // 気圧ストレスによるレベルの下限（docs/design.md §4.2.1 の解決 / 2026-08-01 決定）
-  // 予算だけで決めると、気象因子しか無い日は引ける点が最大60で予算の下限が40になり、
-  // 台風でもレベル3止まりになる。「今日は気圧のせい」が成立しなくなるため下限を設ける
-  stressFloor: [
-    { minStress: 90, level: 5 },
-    { minStress: 75, level: 4 },
-    { minStress: 55, level: 3 },
-    { minStress: 35, level: 2 },
-  ],
-};
+// localhost で開いたら localhost、127.0.0.1 で開いたら 127.0.0.1 を使う。
+// 両者は別オリジン扱いになるため、開いたホストに合わせないとCORSで弾かれる
+const API_BASE = `http://${location.hostname || "localhost"}:8000/api/v1`;
 
-/* ============================================================
-   2. 提案プール（実装時は backend/data/suggestions.yaml）
-   load は負荷レベル。1が最も重く、5が最も軽い。
-   省エネレベル N の日は load >= N のものだけを提示する（上振れ禁止）
-   ============================================================ */
-const SUGGESTIONS = [
-  { id:"outing", text:"行きたかった場所に出かける", load:1, reason:"気圧も気温も落ち着いています。出かけるなら今日のような日です" },
-  { id:"walk",   text:"少し外を歩く",           load:2, reason:"気圧が安定している日は、体が動きを受け入れやすい状態です" },
-  { id:"tidy",   text:"机の上だけ片付ける",     load:2, reason:"視界に入る範囲が整うと、それだけで思考の負荷が下がります" },
-  { id:"music",  text:"好きな曲を1曲だけ聴く",  load:3, reason:"座ったままできて、終わりがはっきりしている活動です" },
-  { id:"air",    text:"窓を開けて空気を入れ替える", load:3, reason:"室内の二酸化炭素が下がると、頭の重さが少し軽くなります" },
-  { id:"sayu",   text:"白湯を飲む",             load:3, reason:"内臓を温めると自律神経が落ち着きやすいとされます" },
-  { id:"breath", text:"目を閉じて3回だけ深呼吸する", load:4, reason:"3回で終わりです。それ以上は求めません" },
-  { id:"stare",  text:"15分ボーッとする",       load:4, reason:"何も考えない時間は、脳の回復に使われています" },
-  { id:"liedown",text:"横になる",               load:4, reason:"体を支える筋肉を休ませるだけで消耗が止まります" },
-  { id:"nothing",text:"何もしない",             load:5, reason:"今日はそれが最適解です" },
-];
-
-/* ============================================================
-   3. 省エネレベルの定義
-   ============================================================ */
-const LEVELS = [
-  { level:1, min:80, name:"平常運転",   hue:150,
-    headline:"今日は気圧が穏やかです。<br>動いても、動かなくても、どちらでも正解です。",
-    suggestTitle:"やってもやらなくてもいいこと" },
-  { level:2, min:60, name:"軽め",       hue:190,
-    headline:"少しだけ気圧が動いています。<br>座ったままできることだけで十分です。",
-    suggestTitle:"座ったままできること" },
-  { level:3, min:40, name:"省エネ",     hue:215,
-    headline:"気圧が下がっています。<br>生きているだけで、今日は仕事をしています。",
-    suggestTitle:"本日の目標" },
-  { level:4, min:20, name:"深い省エネ", hue:245,
-    headline:"今日は気圧のせいです。<br>休んでください。",
-    suggestTitle:"本日の目標" },
-  { level:5, min:0,  name:"完全休止",   hue:272,
-    headline:"気圧が急降下しています。<br>今日は何もしないことが目標です。",
-    suggestTitle:"本日の目標" },
-];
-
-/* ============================================================
-   4. モックシナリオ
-   気圧配列は36要素（過去24時間 + 現在 + 予報11時間）。index 24 が現在時刻
-   ============================================================ */
-// 気圧の時系列を生成する。start から end へ向けて curve の形で変化させる
-function makeSeries(start, end, curve) {
-  const arr = [];
-  for (let i = 0; i < 36; i++) {
-    const t = i / 35;
-    let e;
-    if (curve === "late")       e = Math.pow(t, 2.4);          // 後半で急降下
-    else if (curve === "early") e = 1 - Math.pow(1 - t, 2.4);  // 前半で下がりきる
-    else                        e = t;                         // 直線的
-    // ±0.3hPa の微小な揺らぎを加えて実測らしくする（乱数は使わず再現性を保つ）
-    const noise = Math.sin(i * 1.7) * 0.3;
-    arr.push(+(start + (end - start) * e + noise).toFixed(1));
+async function api(path, method = "GET", body = null) {
+  try {
+    const res = await fetch(API_BASE + path, {
+      method,
+      headers: body ? { "Content-Type": "application/json" } : undefined,
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    const text = await res.text();
+    return { ok: res.ok, status: res.status, data: text ? JSON.parse(text) : null };
+  } catch {
+    return null;  // バックエンド未起動
   }
-  return arr;
 }
 
-const SCENARIOS = [
-  {
-    id:"typhoon", label:"台風接近", desc:"気圧が6時間で急降下",
-    pressure: makeSeries(1008, 981, "late"),
-    tempDelta: -2.5, temp: 26.0, humidity: 88,
-    sleepHours: 4.5, busyHours: 3.0, mailCount: 8,
-    wake:"09:40", bed:"03:10", loc:"石川県野々市市",
-  },
-  {
-    id:"rainy", label:"梅雨の曇天", desc:"緩やかに下がり続ける",
-    pressure: makeSeries(1010, 1001, "linear"),
-    tempDelta: -1.0, temp: 24.0, humidity: 84,
-    sleepHours: 5.0, busyHours: 6.0, mailCount: 5,
-    wake:"06:30", bed:"01:30", loc:"石川県野々市市",
-  },
-  {
-    id:"bomb", label:"爆弾低気圧＋徹夜明け", desc:"気圧が急降下し、睡眠もほぼ取れていない",
-    pressure: makeSeries(1012, 976, "late"),
-    tempDelta: -6.0, temp: 27.0, humidity: 92,
-    sleepHours: 2.0, busyHours: 5.5, mailCount: 15,
-    wake:"07:00", bed:"05:00", loc:"石川県野々市市",
-  },
-  {
-    id:"front", label:"寒冷前線通過後", desc:"気圧は回復、気温が急落",
-    pressure: makeSeries(1004, 1016, "early"),
-    tempDelta: -7.5, temp: 15.0, humidity: 55,
-    sleepHours: 6.5, busyHours: 5.0, mailCount: 12,
-    wake:"07:30", bed:"01:00", loc:"石川県野々市市",
-  },
-  {
-    id:"clear", label:"秋晴れ", desc:"高気圧が安定",
-    pressure: makeSeries(1019, 1021, "linear"),
-    tempDelta: 0.5, temp: 21.0, humidity: 48,
-    sleepHours: 7.5, busyHours: 2.0, mailCount: 2,
-    wake:"07:00", bed:"23:30", loc:"石川県野々市市",
-  },
-];
-
-/* ============================================================
-   5. 気圧ストレス指数（docs/design.md §4.1 の移植）
-   絶対値ではなく「変化率」を主軸にする
-   ============================================================ */
-function pressureStress(p, now) {
-  const d6    = p[now] - p[now - 6];   // 直近6時間の変化
-  const d24   = p[now] - p[now - 24];  // 直近24時間の変化
-  const dNext = p[now + 6] - p[now];   // これから6時間の予報変化
-
-  let score = 0;
-  if (d6 < 0)    score += Math.min(Math.abs(d6) * TH.p6.coef, TH.p6.cap);
-  if (d24 < 0)   score += Math.min(Math.abs(d24) * TH.p24.coef, TH.p24.cap);
-  if (dNext < 0) score += Math.min(Math.abs(dNext) * TH.pNext6.coef, TH.pNext6.cap);
-  if (p[now] < TH.pAbs.base) score += Math.min(TH.pAbs.base - p[now], TH.pAbs.cap);
-
-  return { score: Math.min(score, 100), d6, d24, dNext };
-}
-
-// 不快指数（温湿度から算出）
-function discomfortIndex(t, h) {
-  return 0.81 * t + 0.01 * h * (0.99 * t - 14.3) + 46.3;
-}
-
-/* ============================================================
-   6. 体力予算（docs/design.md §4.2 の移植）
-   各因子に上限を設け、単一因子が予算を食い尽くさないようにする
-   ============================================================ */
-function energyBudget(sc) {
-  const st = pressureStress(sc.pressure, 24);
-  const di = discomfortIndex(sc.temp, sc.humidity);
-  const factors = [];
-
-  const cWeather = st.score * TH.weather;
-  factors.push({
-    name:"気圧の低下", cost:cWeather, cap:100 * TH.weather,
-    detail:`6時間で${st.d6.toFixed(1)}hPa / 24時間で${st.d24.toFixed(1)}hPa`
-  });
-
-  const cTemp = Math.min(Math.abs(sc.tempDelta) * TH.temp.coef, TH.temp.cap);
-  factors.push({ name:"気温の変化", cost:cTemp, cap:TH.temp.cap,
-    detail:`前日比 ${sc.tempDelta > 0 ? "+" : ""}${sc.tempDelta.toFixed(1)}℃` });
-
-  const cHumid = di >= TH.humid.base ? Math.min(di - TH.humid.base, TH.humid.cap) : 0;
-  factors.push({ name:"湿度による不快", cost:cHumid, cap:TH.humid.cap,
-    detail:`不快指数 ${di.toFixed(0)}（湿度${sc.humidity}%）` });
-
-  const cSleep = sc.sleepHours < TH.sleep.ideal
-    ? Math.min((TH.sleep.ideal - sc.sleepHours) * TH.sleep.coef, TH.sleep.cap) : 0;
-  factors.push({ name:"睡眠不足", cost:cSleep, cap:TH.sleep.cap,
-    detail:`睡眠 ${sc.sleepHours.toFixed(1)}時間` });
-
-  const cBusy = Math.min(sc.busyHours * TH.busy.coef, TH.busy.cap);
-  factors.push({ name:"予定の拘束", cost:cBusy, cap:TH.busy.cap,
-    detail:`拘束 ${sc.busyHours.toFixed(1)}時間` });
-
-  const cMail = Math.min(sc.mailCount * TH.mail.coef, TH.mail.cap);
-  factors.push({ name:"要対応メール", cost:cMail, cap:TH.mail.cap,
-    detail:`${sc.mailCount}件` });
-
-  const total = factors.reduce((s, f) => s + f.cost, 0);
-  const budget = Math.max(Math.round(100 - total), 0);
-
-  // 影響の大きい順に並べる
-  factors.sort((a, b) => b.cost - a.cost);
-  return { budget, factors, stress: st, di };
-}
-
-// 気圧ストレスが単独で要求するレベルの下限（docs/design.md §4.2.1）
-function stressFloorLevel(stressScore) {
-  const hit = TH.stressFloor.find(f => stressScore >= f.minStress);
-  return hit ? hit.level : 1;
-}
-
-// 体力予算と気圧ストレスから省エネレベルを決める。
-// 「予算由来のレベル」と「ストレス由来の下限」の深い方を採る（下限であって固定ではない）
-function toLevel(budget, stressScore = 0) {
-  const fromBudget = LEVELS.find(l => budget >= l.min) || LEVELS[LEVELS.length - 1];
-  const floor = stressFloorLevel(stressScore);
-  return LEVELS.find(l => l.level === Math.max(fromBudget.level, floor)) || fromBudget;
-}
-
-// 提案を選ぶ。そのレベル以下の負荷のものだけ、最大3件。レベル5は1件のみ
-function pickSuggestions(level) {
-  // load >= level のものだけが候補（そのレベルで許される負荷を超えない = 上振れ禁止）
-  const pool = SUGGESTIONS.filter(s => s.load >= level);
-  if (level === 5) return pool.filter(s => s.id === "nothing");
-  // 候補のうち「そのレベルで許される上限に近いもの」から順に選ぶ。
-  // 軽い順に並べると全レベルで「何もしない」が筆頭になり、レベルの差が消えるため
-  return [...pool].sort((a, b) => a.load - b.load).slice(0, 3);
-}
-
-/* ============================================================
-   7. 描画
-   ============================================================ */
 const $ = id => document.getElementById(id);
-let current = SCENARIOS[0];
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[c]));
+const pill = (el, text, cls) => { el.textContent = text; el.className = "pill" + (cls ? " " + cls : ""); };
 
-function render() {
-  const sc = current;
-  const { budget, factors, stress, di } = energyBudget(sc);
-  const lv = toLevel(budget, stress.score);
+/* ============================================================
+   2. 画面が持つ状態
+   ============================================================ */
+// 省エネレベルごとの色相。数値と文言はバックエンドが返すが、色はUI固有なので画面側に置く
+const LEVEL_HUE = { 1: 150, 2: 190, 3: 215, 4: 245, 5: 272 };
 
-  // レベルに応じてアクセント色を差し替える（トランジションで緩やかに変化）
+// 位置情報。取得できなければバックエンドの既定値が使われる（設計書 §11 #7）
+let coords = null;
+
+// 直近の省エネレベル。夜の吐き出しに文脈として添えるほか、テーマ切替時の再描画に使う
+let currentLevel = 3;
+
+// 最後に取得できた時刻。タブに戻ったときの再取得を間引くのに使う
+let lastLoad = 0;
+
+// 自動更新の間隔。気象は1時間粒度、Google連携はバックエンド側で5分キャッシュされるため、
+// これより短くしても返る値は変わらない
+const REFRESH_MS = 5 * 60 * 1000;
+
+function locParams() {
+  return coords ? `?lat=${coords.lat}&lon=${coords.lon}` : "";
+}
+
+function showAlert(text) {
+  const el = $("alert");
+  el.textContent = text;
+  el.hidden = false;
+}
+function hideAlert() { $("alert").hidden = true; }
+
+/* ============================================================
+   3. 描画 — 本日のプラン
+   ============================================================ */
+function applyAccent(level) {
+  const hue = LEVEL_HUE[level] ?? 215;
   // ライト環境では暗い差し色がコントラストを強めすぎるため、明度を反転させる
   const light = matchMedia("(prefers-color-scheme: light)").matches;
-  document.documentElement.style.setProperty("--accent",
-    light ? `hsl(${lv.hue}, 34%, 42%)` : `hsl(${lv.hue}, 30%, 60%)`);
-  document.documentElement.style.setProperty("--accent-dim",
-    light ? `hsl(${lv.hue}, 30%, 80%)` : `hsl(${lv.hue}, 22%, 30%)`);
+  const root = document.documentElement.style;
+  root.setProperty("--accent",     light ? `hsl(${hue}, 34%, 42%)` : `hsl(${hue}, 30%, 60%)`);
+  root.setProperty("--accent-dim", light ? `hsl(${hue}, 30%, 80%)` : `hsl(${hue}, 22%, 30%)`);
+}
 
-  // --- ホーム ---
-  $("level-num").textContent = lv.level;
-  $("level-name").textContent = lv.name;
-  $("headline").innerHTML = lv.headline;
-  $("budget-note").textContent = `体力予算 ${budget} / 100`;
-  $("suggest-title").textContent = lv.suggestTitle;
+// ヘッドラインは1文ごとに改行する。バックエンドは改行を含まない平文を返すため
+function headlineHtml(text) {
+  return esc(text).replace(/。(?!$)/g, "。<br>");
+}
 
-  $("suggestions").innerHTML = pickSuggestions(lv.level).map(s => `
+function renderPlan(p) {
+  currentLevel = p.level;
+  applyAccent(p.level);
+
+  $("level-num").textContent = p.level;
+  $("level-name").textContent = p.level_name;
+  $("headline").innerHTML = headlineHtml(p.headline);
+  $("budget-note").textContent =
+    `体力予算 ${p.energy_budget} / 100　・　気圧ストレス ${p.pressure_stress} / 100`;
+  $("suggest-title").textContent = p.suggest_title;
+
+  // 提案にチェックボックスは置かない（設計書 §1.3 禁止事項）
+  $("suggestions").innerHTML = p.suggestions.map(s => `
     <div class="suggest">
-      <div class="suggest-text">${s.text}</div>
-      <div class="suggest-reason">${s.reason}</div>
+      <div class="suggest-text">${esc(s.text)}</div>
+      <div class="suggest-reason">${esc(s.reason)}</div>
     </div>`).join("");
 
-  $("breakdown").innerHTML = factors.filter(f => f.cost > 0.5).map(f => `
-    <div class="factor">
-      <div class="factor-head"><span>${f.name}</span><span class="factor-cost">−${f.cost.toFixed(0)}</span></div>
-      <div class="factor-bar"><i style="width:${Math.min(f.cost / f.cap * 100, 100)}%"></i></div>
-      <div class="factor-detail">${f.detail}</div>
+  $("breakdown").innerHTML = p.breakdown.length
+    ? p.breakdown.map(b => `
+        <div class="factor">
+          <div class="factor-head"><span>${esc(b.factor)}</span><span class="factor-cost">−${b.cost}</span></div>
+          <div class="factor-bar"><i style="width:${Math.min(b.cost / b.cap * 100, 100)}%"></i></div>
+          <div class="factor-detail">${esc(b.detail)}</div>
+        </div>`).join("")
+    : `<p class="ctx-note">差し引く要因がありません。予算は満額です。</p>`;
+
+  $("breakdown-note").textContent = p.level_driven_by_pressure
+    ? "このレベルは体力予算ではなく、気圧ストレスの下限で決まっています（設計書 §4.2.1）。"
+    : "このレベルは体力予算から決まっています。";
+}
+
+/* ============================================================
+   4. 描画 — 今日の外的負荷（カレンダー / メール / ToDo）
+   出すのは件数と時間だけ。予定のタイトルもメールの件名もAPIが返さない（設計書 §7.2）
+   ============================================================ */
+function renderContext(ctx) {
+  const box = $("context"), note = $("context-note");
+
+  if (!ctx) {
+    box.innerHTML = "";
+    note.textContent = "カレンダー・メール・ToDoの状態を取得できませんでした。";
+    return;
+  }
+  if (!ctx.linked) {
+    // 未連携は正常な状態のひとつ。気象の要因だけで成立する（設計書 §7.2）
+    box.innerHTML = "";
+    note.textContent = "Google未連携のため、カレンダー・メール・ToDoは見ていません。"
+      + "上の予算は気象の要因だけで算出しています。";
+    return;
+  }
+
+  // null は「未計測」、0 は「計測して負荷が無かった」。両者を混同しない
+  const fmt = (v, digits) => (v === null || v === undefined ? null : v.toFixed(digits));
+  box.innerHTML = [
+    ["カレンダー", fmt(ctx.busy_hours, 1),            "時間", "予定に拘束される時間"],
+    ["メール",     fmt(ctx.actionable_mail_count, 0), "件",   "未読の重要メール"],
+    ["ToDo",       fmt(ctx.open_task_count, 0),       "件",   "対応待ちのToDo"],
+  ].map(([label, value, unit, sub]) => `
+    <div class="ctx-card">
+      <div class="ctx-label">${label}</div>
+      <div class="ctx-value">${value ?? "—"}${value === null ? "" : `<span class="ctx-unit">${unit}</span>`}</div>
+      <div class="ctx-sub">${value === null ? "取得できませんでした" : sub}</div>
     </div>`).join("");
 
-  // --- 気圧グラフ ---
-  drawChart(sc.pressure, 24);
+  // 「やること」ではなく「余裕が少ない理由」として提示する（設計書 §1.2）
+  const notes = [];
+  if (!ctx.use_context) notes.push("予算への反映は設定で止めています。");
+  notes.push("これらは今日やるべきことの一覧ではなく、今日の余裕が少ない理由です。");
+  if (ctx.warnings.length) notes.push("取得できなかった項目: " + ctx.warnings.join(" / "));
+  note.textContent = notes.join(" ");
+}
+
+/* ============================================================
+   5. 描画 — 気圧
+   ============================================================ */
+function renderAtmosphere(a) {
+  const s = a.stress;
+  const sign = v => (v > 0 ? "+" : "") + v.toFixed(1);
+
   $("stress-note").textContent =
-    `気圧ストレス指数 ${stress.score.toFixed(0)} / 100 — ` +
-    (stress.d6 <= -3 ? "6時間で3hPa以上低下しています。体調が崩れやすい条件です。"
-                     : "急激な低下は起きていません。");
+    `気圧ストレス指数 ${s.score.toFixed(0)} / 100 — `
+    + (s.delta_6h <= -3 ? "6時間で3hPa以上低下しています。体調が崩れやすい条件です。"
+                        : "急激な低下は起きていません。")
+    + (a.stale ? "　※ 通信に失敗したため、保存済みの値を表示しています。" : "");
 
   $("metrics").innerHTML = [
-    ["現在の気圧", `${sc.pressure[24].toFixed(1)} hPa`, sc.pressure[24] < 1000 ? "低い" : "標準的"],
-    ["6時間の変化", `${stress.d6.toFixed(1)} hPa`, stress.d6 <= -3 ? "急降下" : stress.d6 < 0 ? "緩やかに低下" : "上昇/横ばい"],
-    ["24時間の変化", `${stress.d24.toFixed(1)} hPa`, stress.d24 <= -10 ? "大きく低下" : stress.d24 < 0 ? "低下" : "上昇/横ばい"],
-    ["今後6時間の予報", `${stress.dNext.toFixed(1)} hPa`, stress.dNext < 0 ? "さらに低下する見込み" : "回復傾向"],
-    ["気温", `${sc.temp.toFixed(1)} ℃（前日比 ${sc.tempDelta > 0 ? "+" : ""}${sc.tempDelta.toFixed(1)}）`, Math.abs(sc.tempDelta) >= 5 ? "変化が大きい" : "標準的"],
-    ["不快指数", di.toFixed(0), di >= 80 ? "暑苦しい" : di >= 75 ? "やや不快" : "快適"],
+    ["現在の気圧", `${a.pressure.toFixed(1)} hPa`, a.pressure < 1000 ? "低い" : "標準的"],
+    ["6時間の変化", `${sign(s.delta_6h)} hPa`,
+      s.delta_6h <= -3 ? "急降下" : s.delta_6h < 0 ? "緩やかに低下" : "上昇/横ばい"],
+    ["24時間の変化", `${sign(s.delta_24h)} hPa`,
+      s.delta_24h <= -10 ? "大きく低下" : s.delta_24h < 0 ? "低下" : "上昇/横ばい"],
+    ["今後6時間の予報", `${sign(s.delta_next6h)} hPa`,
+      s.delta_next6h < 0 ? "さらに低下する見込み" : "回復傾向"],
+    ["気温", `${a.temperature.toFixed(1)} ℃（前日比 ${sign(a.temp_delta_vs_yesterday)}）`,
+      Math.abs(a.temp_delta_vs_yesterday) >= 5 ? "変化が大きい" : "標準的"],
+    ["湿度", `${a.humidity.toFixed(0)} %`, a.humidity >= 80 ? "高い" : "標準的"],
+    ["不快指数", a.discomfort_index.toFixed(0),
+      a.discomfort_index >= 80 ? "暑苦しい" : a.discomfort_index >= 75 ? "やや不快" : "快適"],
+    ["観測時刻", esc(a.observed_at), a.stale ? "保存済みの値" : esc(a.source)],
   ].map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td style="color:var(--text-dim)">${r[2]}</td></tr>`).join("");
-
-  // --- 設定 ---
-  $("set-loc").textContent = sc.loc;
-  $("set-wake").textContent = sc.wake;
-  $("set-bed").textContent = `${sc.bed}（前夜）`;
-  $("set-busy").textContent = `${sc.busyHours.toFixed(1)}時間`;
-  $("set-mail").textContent = `${sc.mailCount}件`;
 }
 
 /* 気圧グラフをSVGで描画する。ライブラリを使わず依存をゼロに保つ */
-function drawChart(p, now) {
+function drawChart(chart) {
+  const p = chart.pressure, times = chart.times, now = chart.now_index;
+  if (!p || p.length < 2) return;
+
   const W = 720, H = 240, PAD_L = 46, PAD_R = 16, PAD_T = 16, PAD_B = 30;
   const min = Math.min(...p) - 2, max = Math.max(...p) + 2;
   const x = i => PAD_L + (i / (p.length - 1)) * (W - PAD_L - PAD_R);
@@ -684,15 +649,92 @@ function drawChart(p, now) {
   svg += `<circle cx="${x(now)}" cy="${y(p[now])}" r="4" fill="var(--accent)"/>`;
   svg += `<text x="${x(now)}" y="${PAD_T - 4}" text-anchor="middle" font-size="10" fill="var(--text-dim)">現在 ${p[now].toFixed(1)}hPa</text>`;
 
-  // 時刻の目盛り
-  [[0, "-24h"], [12, "-12h"], [24, "現在"], [35, "+11h"]].forEach(([i, label]) => {
+  // 時刻の目盛り。系列の長さは固定ではないため、位置を割合で決めて実時刻を出す
+  const hhmm = i => (times[i] || "").slice(11, 16);
+  const ticks = [...new Set([0, Math.round(now / 2), now, Math.round((now + p.length - 1) / 2), p.length - 1])];
+  ticks.forEach(i => {
+    const label = i === now ? "現在" : hhmm(i);
+    if (!label) return;
     svg += `<text x="${x(i)}" y="${H - 10}" text-anchor="middle" font-size="10" fill="var(--text-faint)">${label}</text>`;
   });
 
   $("chart").innerHTML = svg;
   // スクリーンリーダー向けの説明（色だけに情報を持たせない）
   $("chart-desc").textContent =
-    `過去24時間で${(p[now] - p[0]).toFixed(1)}hPa変化し、現在は${p[now].toFixed(1)}hPaです。`;
+    `${hhmm(0)}から${hhmm(p.length - 1)}までの気圧の推移です。`
+    + `現在は${p[now].toFixed(1)}hPaで、表示開始時点から${(p[now] - p[0]).toFixed(1)}hPa変化しています。`;
+}
+
+/* ============================================================
+   6. 描画 — 設定タブの現在値
+   ============================================================ */
+function renderSettings(atm, ctx, gs) {
+  const num = (v, digits, unit) =>
+    (v === null || v === undefined ? "—（未取得）" : v.toFixed(digits) + unit);
+
+  $("set-loc").textContent = atm ? `${atm.latitude}, ${atm.longitude}` : "—";
+  $("set-busy").textContent = ctx ? num(ctx.busy_hours, 1, "時間") : "—";
+  $("set-mail").textContent = ctx ? num(ctx.actionable_mail_count, 0, "件") : "—";
+  $("set-task").textContent = ctx ? num(ctx.open_task_count, 0, "件") : "—";
+
+  // Google連携の状態。未登録・未連携・連携済みの3状態を区別して見せる。
+  // 状態そのものを取得できていない場合に「未登録」と言い切らない
+  if (!gs) {
+    ["gg-cal", "gg-task", "gg-mail"].forEach(id => pill($(id), "—"));
+    return;
+  }
+  const linked = !!gs.linked;
+  const fallback = gs.configured ? "未連携" : "クライアント未登録";
+  pill($("gg-cal"),  linked ? "連携済み / 読み取りのみ" : fallback, linked ? "ok" : "");
+  pill($("gg-task"), linked ? "連携済み / 読み取りのみ" : fallback, linked ? "ok" : "");
+  pill($("gg-mail"), linked ? "連携済み / 件数のみ"     : fallback, linked ? "ok" : "");
+}
+
+/* ============================================================
+   7. 取得
+   ============================================================ */
+async function load() {
+  pill($("st-backend"), "確認中…");
+
+  const health = await api("/health");
+  if (!health) {
+    pill($("st-backend"), "未起動", "ng");
+    pill($("st-weather"), "—");
+    showAlert("バックエンドに接続できません。backend で "
+      + "python -m uvicorn app.main:app --reload --port 8000 を起動してください。");
+    renderContext(null);
+    renderSettings(null, null, null);
+    return;
+  }
+  pill($("st-backend"), "接続済み", "ok");
+
+  const [plan, atm, ctx, gs] = await Promise.all([
+    api("/daily-plan" + locParams()),
+    api("/atmosphere" + locParams()),
+    api("/context"),
+    api("/settings/google"),
+  ]);
+
+  if (plan && plan.ok) {
+    hideAlert();
+    renderPlan(plan.data);
+    pill($("st-weather"), plan.data.stale ? "保存済みの値" : "取得済み",
+         plan.data.stale ? "warn" : "ok");
+  } else {
+    pill($("st-weather"), "取得失敗", "ng");
+    showAlert("気象データを取得できませんでした。"
+      + ((plan && plan.data && plan.data.detail) ? plan.data.detail : ""));
+  }
+
+  if (atm && atm.ok) { drawChart(atm.data.chart); renderAtmosphere(atm.data); }
+  renderContext(ctx && ctx.ok ? ctx.data : null);
+  renderSettings(atm && atm.ok ? atm.data : null,
+                 ctx && ctx.ok ? ctx.data : null,
+                 gs && gs.ok ? gs.data : null);
+
+  lastLoad = Date.now();
+  $("st-updated").textContent = "最終更新 "
+    + new Date().toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" });
 }
 
 /* ============================================================
@@ -716,10 +758,8 @@ $("btn-send").addEventListener("click", async () => {
   el.classList.remove("shown");
   $("reply-note").textContent = "";
 
-  // 現在のシナリオの省エネレベルを添えて送る（応答の文脈に使われる）
-  const eb = energyBudget(current);
-  const level = toLevel(eb.budget, eb.stress.score).level;
-  const r = await api("/reflection", "POST", { text, level });
+  // 今日の省エネレベルを添えて送る（応答の文脈に使われる）
+  const r = await api("/reflection", "POST", { text, level: currentLevel });
 
   let reply, note;
   if (r && r.ok) {
@@ -783,7 +823,7 @@ if (!SR) {
 }
 
 /* ============================================================
-   9. タブ切替とシナリオ切替
+   9. タブ切替
    ============================================================ */
 document.querySelectorAll("nav button").forEach(b => {
   b.addEventListener("click", () => {
@@ -794,34 +834,10 @@ document.querySelectorAll("nav button").forEach(b => {
   });
 });
 
-const sel = $("scenario");
-sel.innerHTML = SCENARIOS.map((s, i) => `<option value="${i}">${s.label}</option>`).join("");
-sel.addEventListener("change", () => {
-  current = SCENARIOS[+sel.value];
-  $("scenario-desc").textContent = current.desc;
-  render();
-});
-
 /* ============================================================
    10. Gemini API 設定（バックエンド連携）
    バックエンドが未起動でも画面が壊れないよう、通信失敗は「未起動」として扱う
    ============================================================ */
-const API_BASE = "http://localhost:8000/api/v1";
-
-async function api(path, method = "GET", body = null) {
-  try {
-    const res = await fetch(API_BASE + path, {
-      method,
-      headers: body ? { "Content-Type": "application/json" } : undefined,
-      body: body ? JSON.stringify(body) : undefined,
-    });
-    const text = await res.text();
-    return { ok: res.ok, status: res.status, data: text ? JSON.parse(text) : null };
-  } catch {
-    return null;  // バックエンド未起動
-  }
-}
-
 const setMsg = t => { $("gm-msg").textContent = t; };
 
 // 設定状態を読み込んで画面に反映する
@@ -908,12 +924,43 @@ $("gm-delete").addEventListener("click", async () => {
   loadGeminiStatus();
 });
 
+/* ============================================================
+   11. 起動と自動更新
+   ============================================================ */
 // OS側のテーマが切り替わったら差し色を再計算する
-matchMedia("(prefers-color-scheme: light)").addEventListener("change", render);
+matchMedia("(prefers-color-scheme: light)").addEventListener("change", () => applyAccent(currentLevel));
 
-$("scenario-desc").textContent = current.desc;
-render();
+$("btn-reload").addEventListener("click", load);
+
+$("btn-locate").addEventListener("click", () => {
+  const btn = $("btn-locate");
+  if (!navigator.geolocation) { btn.textContent = "位置情報を使えません"; btn.disabled = true; return; }
+  btn.disabled = true;
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      coords = { lat: pos.coords.latitude.toFixed(4), lon: pos.coords.longitude.toFixed(4) };
+      btn.textContent = `現在地 ${coords.lat}, ${coords.lon}`;
+      btn.disabled = false;
+      load();
+    },
+    () => {
+      // 拒否された場合はバックエンドの既定値のまま使う（設計書 §11 #7）
+      btn.textContent = "既定の地点を使用中";
+      btn.disabled = false;
+    }
+  );
+});
+
+load();
 loadGeminiStatus();
+
+// 自動更新。裏に回っている間は叩かない
+setInterval(() => { if (!document.hidden) load(); }, REFRESH_MS);
+
+// タブに戻ってきたときも取り直す。ただし直後の再取得は間引く
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden && Date.now() - lastLoad > 60_000) load();
+});
 </script>
 </body>
 </html>

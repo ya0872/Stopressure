@@ -1,7 +1,7 @@
 """/atmosphere と /daily-plan の検証。
 
-外部APIには接続せず、open_meteo.fetch を差し替えて動かす。テストが学内プロキシの
-有無やOpen-Meteoの稼働状況に左右されないようにするため。
+外部APIには接続せず、open_meteo.fetch を差し替えて動かす。テストがネットワーク環境や
+Open-Meteoの稼働状況に左右されないようにするため。
 """
 from __future__ import annotations
 
@@ -83,7 +83,7 @@ def test_invalid_location_is_rejected():
 def test_falls_back_to_snapshot(monkeypatch):
     """通信に失敗しても、直近のスナップショットで画面を保つこと。
 
-    学内プロキシの設定漏れ・学外でのプロキシ残存で通信が落ちるのは日常的に起こる。
+    ネットワーク側の事情で通信が落ちるのは日常的に起こる。
     そのたびに画面が真っ白になるのは避ける（§10 リスクと退避策）。
     """
     monkeypatch.setattr(open_meteo, "fetch", lambda lat, lon, now=None: _series(SCENARIOS[0]))
@@ -106,7 +106,7 @@ def test_falls_back_to_snapshot(monkeypatch):
 def test_returns_503_when_nothing_is_available(monkeypatch):
     """スナップショットも無い場合は503を返し、原因をそのまま見せる。"""
     def boom(lat, lon, now=None):
-        raise AtmosphereUnavailable("Open-Meteoに接続できませんでした: proxy")
+        raise AtmosphereUnavailable("Open-Meteoに接続できませんでした: timeout")
 
     monkeypatch.setattr(open_meteo, "fetch", boom)
     res = client.get("/api/v1/atmosphere")

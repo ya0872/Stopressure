@@ -147,10 +147,9 @@ def unread_important_count(label: dict) -> int:
 def _service(name: str, version: str, creds):
     """Google API サービスを構築する。
 
-    google-api-python-client は内部で httplib2 を使うが、httplib2 は HTTPS_PROXY を
-    自動で読まず、明示的に渡しても学内プロキシ経由で通らない。
-    requests ベースの AuthorizedSession を httplib2 互換でラップすることで、
-    httpx / requests と同じプロキシ経路を使う。
+    google-api-python-client は既定で httplib2 を使うが、本アプリの他の通信は
+    httpx / requests に寄せてある。requests ベースの AuthorizedSession を
+    httplib2 互換でラップし、通信経路を1本に揃える。
     """
     import httplib2
     from google.auth.transport.requests import AuthorizedSession
@@ -161,7 +160,6 @@ def _service(name: str, version: str, creds):
     class _Http:
         """AuthorizedSession を httplib2.Http 互換にする薄いアダプタ。
 
-        requests は HTTPS_PROXY を自動で読むため、httplib2 のプロキシ問題を回避できる。
         googleapiclient が使う .request(uri, method, body, headers) だけを実装する。
         """
         def request(self, uri, method="GET", body=None, headers=None, **kwargs):

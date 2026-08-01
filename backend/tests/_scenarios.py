@@ -1,7 +1,9 @@
 """テスト用の気象シナリオ。
 
-mockup/index.html の SCENARIOS と同じ値を再現する。バックエンドの算出結果が
-モックアップと一致することを確かめるために使う（CLAUDE.md: 両者を同時に直すこと）。
+台風・梅雨・爆弾低気圧・寒冷前線・秋晴れの5パターンで、気圧ストレスと省エネレベルの
+算出を固定する。元はモックアップ（mockup/index.html）が持っていた同じ値の写しだったが、
+2026-08-01 に画面がライブデータ化して算出ロジックを持たなくなったため、
+現在はこちらが唯一の定義になっている。
 乱数を使わず sin で揺らぎを与えているため、何度実行しても同じ系列になる。
 """
 from __future__ import annotations
@@ -65,8 +67,8 @@ DEFAULT_LON = 136.6094
 def hourly_series(sc: Scenario, *, now: datetime | None = None) -> HourlySeries:
     """シナリオから、現在時刻に合わせた HourlySeries を作る。
 
-    open_meteo.fetch の差し替え先として使う。テストがネットワークとプロキシの
-    状態に左右されないようにするため。
+    open_meteo.fetch の差し替え先として使う。テストがネットワークの状態に
+    左右されないようにするため。
     """
     now = (now or datetime.now(JST)).replace(minute=0, second=0, microsecond=0)
     base = now - timedelta(hours=NOW_INDEX)

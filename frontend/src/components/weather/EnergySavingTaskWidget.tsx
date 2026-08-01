@@ -1,22 +1,23 @@
-import React from 'react';
 import { useEnergySavingTasks } from '../../hooks/useEnergySavingTasks';
 
-export const EnergySavingTaskWidget: React.FC = () => {
-  const { tasks, isLoading } = useEnergySavingTasks();
+export const EnergySavingTaskWidget = () => {
+  const { tasks, title, isLoading } = useEnergySavingTasks();
 
-  if (isLoading) return <div className="widget-box" style={{ opacity: 0.7 }}>提案を生成中...</div>;
-  if (!tasks || tasks.length === 0) return null;
+  if (isLoading && tasks.length === 0) {
+    return <div className="widget-box" style={{ opacity: 0.7 }}>提案を取得しています...</div>;
+  }
+  if (tasks.length === 0) return null;
 
   return (
     <section>
-      <div className="sec-title">本日の目標</div>
+      {/* 見出しはレベルによって変わるためサーバーから受け取る */}
+      <div className="sec-title">{title}</div>
       <div>
         {tasks.map((task) => (
+          // チェックボックス・完了操作は付けないこと（docs/design.md §1.2）
           <div key={task.id} className="suggest">
             <div className="suggest-text">{task.title}</div>
-            {task.description && (
-              <div className="suggest-reason">{task.description}</div>
-            )}
+            {task.description && <div className="suggest-reason">{task.description}</div>}
           </div>
         ))}
       </div>

@@ -241,5 +241,5 @@ def test_gemini() -> TestResult:
     except gemini.GeminiSDKMissing as e:
         return TestResult(ok=False, message=str(e))
     except gemini.GeminiCallFailed as e:
-        # 学内プロキシ環境では接続自体が失敗しうるため、原因をそのまま見せる
+        # ネットワーク環境によっては接続自体が失敗しうるため、原因をそのまま見せる
         return TestResult(ok=False, message=f"呼び出しに失敗しました: {e}")

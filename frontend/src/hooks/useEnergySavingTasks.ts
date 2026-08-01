@@ -1,23 +1,28 @@
-import { useState, useEffect } from 'react';
+import { useAtmosphere } from '../context/atmosphereContext';
 import type { EnergyTask } from '../types/weather';
 
-export const useEnergySavingTasks = () => {
-  const [tasks, setTasks] = useState<EnergyTask[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+/**
+ * 本日の提案を取り出す（GET /daily-plan の suggestions）。
+ *
+ * 何をどれだけ出すかはサーバー側の planner.pick_suggestions が決めている
+ * （レベル以下の負荷のものだけ・最大3件・レベル5では1件）。ここで絞り込みや
+ * 並べ替えを足すと、その規則が2箇所に分かれるので足さないこと。
+ *
+ * title は見出し文言。レベルによって変わるためサーバーから受け取る。
+ */
+export function useEnergySavingTasks(): {
+  tasks: EnergyTask[];
+  title: string;
+  isLoading: boolean;
+} {
+  const { plan, isLoading } = useAtmosphere();
 
-  useEffect(() => {
-    const fetchMockTasks = async () => {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setTasks([
-        { id: '1', title: '白湯を飲む', description: '内臓を温めてホッと一息つきましょう' },
-        { id: '2', title: '15分ボーッとする', description: '画面から目を離して、思考を停止します' },
-        { id: '3', title: '深呼吸を3回', description: '自律神経を落ち着かせます' },
-      ]);
-      setIsLoading(false);
-    };
+  // SuggestionItem を画面の語彙へ置き換えるだけ。完了フラグは足さない（§1.2）
+  const tasks: EnergyTask[] = (plan?.suggestions ?? []).map((s) => ({
+    id: s.id,
+    title: s.text,
+    description: s.reason,
+  }));
 
-    fetchMockTasks();
-  }, []);
-
-  return { tasks, isLoading };
-};
+  return { tasks, title: plan?.suggest_title ?? '本日の目標', isLoading };
+}

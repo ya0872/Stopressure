@@ -170,7 +170,6 @@ def load_credentials():
         raise GoogleNotLinked("トークンの有効期限が切れています。連携し直してください")
 
     try:
-        # requests は HTTP(S)_PROXY を大文字小文字どちらでも読むため、学内プロキシでもそのまま通る
         creds.refresh(Request())
     except Exception as e:
         raise GoogleAuthFailed(f"トークンの更新に失敗しました: {e}") from e
@@ -215,7 +214,7 @@ def verify_client(redirect_uri: str = DEFAULT_REDIRECT_URI) -> tuple[bool, str]:
         )
         payload = res.json()
     except Exception as e:
-        # 学内プロキシ・学外でのプロキシ残存など、環境側が原因のことが多い
+        # 環境側が原因のことが多い
         raise GoogleAuthFailed(f"Googleに接続できませんでした: {e}") from e
 
     error = payload.get("error", "")
