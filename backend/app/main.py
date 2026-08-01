@@ -15,14 +15,20 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .db import init_db
-from .routers import generate, reflection, settings
+from .routers import atmosphere, auth_google, context, generate, plan, reflection, settings
 
 # 起動ディレクトリに依存しないよう backend/.env を絶対パスで読み込む。
 # プロキシ設定（HTTPS_PROXY）もここで環境変数に載り、Gemini SDK がそのまま利用する。
 load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
-# フロントは別ポートで動くためCORSが必要。既定はモックアップとViteの開発サーバー
-_DEFAULT_ORIGINS = "http://localhost:8765,http://localhost:5173"
+# フロントは別ポートで動くためCORSが必要。既定はモックアップとViteの開発サーバー。
+# localhost と 127.0.0.1 は別オリジンとして扱われるため、両方を許可しておく
+# （Windowsでは localhost が ::1 に解決されて繋がらないことがあり、その回避で
+#   127.0.0.1 で開く場面があるため）
+_DEFAULT_ORIGINS = (
+    "http://localhost:8765,http://127.0.0.1:8765,"
+    "http://localhost:5173,http://127.0.0.1:5173"
+)
 ORIGINS = [o.strip() for o in os.getenv("CORS_ORIGINS", _DEFAULT_ORIGINS).split(",") if o.strip()]
 
 
@@ -49,6 +55,10 @@ app.add_middleware(
 )
 
 app.include_router(settings.router, prefix="/api/v1")
+app.include_router(auth_google.router, prefix="/api/v1")
+app.include_router(atmosphere.router, prefix="/api/v1")
+app.include_router(plan.router, prefix="/api/v1")
+app.include_router(context.router, prefix="/api/v1")
 app.include_router(generate.router, prefix="/api/v1")
 app.include_router(reflection.router, prefix="/api/v1")
 

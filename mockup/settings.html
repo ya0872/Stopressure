@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>低気圧のすゝめ — 設定</title>
+<style>
+/* ============================================================
+   デザイン方針（docs/design.md §8.2）
+   - 低刺激: 彩度を抑える。純白の背景は使わない
+   - アニメーションは緩慢に: 400ms以上、バウンス禁止
+   - 色だけに情報を持たせない: 数値・テキストを必ず併記
+   ============================================================ */
+:root {
+  --bg:        #15171c;
+  --bg-raised: #1c1f26;
+  --bg-sunken: #101216;
+  --border:    #282c35;
+  --text:      #e4e1da;
+  --text-dim:  #8d8f98;
+  --text-faint:#5d606a;
+  --accent:    hsl(215, 30%, 58%);
+  --ok:   hsl(150, 26%, 62%);
+  --warn: hsl(38, 40%, 66%);
+  --ng:   hsl(5, 38%, 68%);
+  --ease: cubic-bezier(0.32, 0.08, 0.24, 1);
+  --dur: 600ms;
+}
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg:        #edeae3;
+    --bg-raised: #f4f2ec;
+    --bg-sunken: #e3e0d8;
+    --border:    #d5d1c7;
+    --text:      #2e2d2a;
+    --text-dim:  #6f6d67;
+    --text-faint:#9b9890;
+    --ok:   hsl(150, 28%, 32%);
+    --warn: hsl(38, 44%, 34%);
+    --ng:   hsl(5, 40%, 42%);
+  }
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif;
+  font-feature-settings: "palt";
+  line-height: 1.8; letter-spacing: 0.02em;
+  padding-bottom: 4rem;
+}
+.wrap { max-width: 680px; margin: 0 auto; padding: 0 1.25rem; }
+
+/* ---------- ナビ ---------- */
+.topbar { background: var(--bg-sunken); border-bottom: 1px solid var(--border); padding: 0.6rem 0; }
+.topbar .wrap { display: flex; align-items: center; gap: 1.1rem; font-size: 0.75rem; flex-wrap: wrap; }
+.topbar a { color: var(--text-faint); text-decoration: none; letter-spacing: 0.08em; transition: color var(--dur) var(--ease); }
+.topbar a:hover { color: var(--text); }
+.topbar a.here { color: var(--text); }
+
+header { padding: 2.5rem 0 1.25rem; }
+.title { font-size: 0.95rem; font-weight: 500; letter-spacing: 0.16em; color: var(--text-dim); }
+.subtitle { font-size: 0.7rem; color: var(--text-faint); letter-spacing: 0.1em; margin-top: 0.2rem; }
+
+section {
+  background: var(--bg-raised); border: 1px solid var(--border);
+  border-radius: 8px; padding: 1.5rem 1.4rem; margin-bottom: 1.25rem;
+}
+.sec-title { font-size: 0.68rem; letter-spacing: 0.16em; color: var(--text-faint);
+             text-transform: uppercase; margin-bottom: 1.1rem; }
+
+/* ---------- 状態表示 ---------- */
+.rows { font-size: 0.8rem; margin-bottom: 1.2rem; }
+.row { display: flex; justify-content: space-between; gap: 1rem;
+       padding: 0.45rem 0; border-top: 1px solid var(--border); }
+.row:first-child { border-top: none; }
+.row > span:first-child { color: var(--text-dim); }
+.val { text-align: right; font-variant-numeric: tabular-nums; }
+.val.ok { color: var(--ok); } .val.warn { color: var(--warn); } .val.ng { color: var(--ng); }
+.val.dim { color: var(--text-faint); }
+.val.mono { font-family: ui-monospace, "Consolas", monospace; font-size: 0.75rem; letter-spacing: 0; }
+
+/* ---------- 入力 ---------- */
+.field { margin-bottom: 1rem; }
+label { display: block; font-size: 0.75rem; color: var(--text-dim); margin-bottom: 0.35rem; }
+label .hint { color: var(--text-faint); font-size: 0.7rem; }
+.input-row { display: flex; gap: 0.4rem; }
+input[type=text], input[type=password], select, textarea {
+  flex: 1; min-width: 0; width: 100%;
+  background: var(--bg-sunken); color: var(--text);
+  border: 1px solid var(--border); border-radius: 4px;
+  padding: 0.5rem 0.65rem; font-family: ui-monospace, "Consolas", monospace;
+  font-size: 0.78rem; letter-spacing: 0;
+  transition: border-color var(--dur) var(--ease);
+}
+textarea { resize: vertical; line-height: 1.6; }
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--text-faint); }
+input::placeholder { color: var(--text-faint); opacity: 0.6; }
+select { font-family: inherit; letter-spacing: 0.02em; }
+
+button {
+  background: var(--bg-sunken); color: var(--text-dim);
+  border: 1px solid var(--border); border-radius: 4px;
+  font-family: inherit; font-size: 0.75rem; letter-spacing: 0.06em;
+  padding: 0.45rem 0.9rem; cursor: pointer; white-space: nowrap;
+  transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+button:hover:not(:disabled) { color: var(--text); border-color: var(--text-faint); }
+button:disabled { opacity: 0.4; cursor: default; }
+button.primary { color: var(--text); border-color: var(--text-faint); }
+button.danger:hover:not(:disabled) { color: var(--ng); border-color: var(--ng); }
+a.btn { text-decoration: none; }
+
+.actions { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 1rem; }
+.msg { font-size: 0.75rem; color: var(--text-faint); margin-top: 0.8rem; min-height: 1.4em; }
+.msg.ok { color: var(--ok); } .msg.ng { color: var(--ng); }
+
+.note { font-size: 0.72rem; color: var(--text-faint); line-height: 1.9;
+        margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+.note code, code.inline {
+  font-family: ui-monospace, "Consolas", monospace; font-size: 0.72rem;
+  background: var(--bg-sunken); padding: 0.1rem 0.35rem; border-radius: 3px;
+  letter-spacing: 0; color: var(--text-dim);
+}
+ol { margin: 0.5rem 0 0 1.2rem; font-size: 0.75rem; color: var(--text-faint); }
+ol li { margin-bottom: 0.35rem; }
+
+.copyline { display: flex; gap: 0.4rem; align-items: center; margin-top: 0.5rem; }
+.copyline input { font-size: 0.72rem; }
+
+.toggle { display: flex; align-items: center; gap: 0.6rem; font-size: 0.8rem; }
+.toggle input { flex: none; width: auto; }
+
+.disclaimer { font-size: 0.7rem; color: var(--text-faint); line-height: 1.9;
+              border-top: 1px solid var(--border); padding-top: 1.2rem; margin-top: 0.5rem; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="wrap">
+    <a href="./settings.html" class="here">設定</a>
+    <a href="./live.html">実データ確認</a>
+    <a href="./index.html">モックアップ</a>
+  </div>
+</div>
+
+<div class="wrap">
+  <header>
+    <div class="title">設定</div>
+    <div class="subtitle">ATMOSPHERE STUDIO — API キーと Google 連携</div>
+  </header>
+
+  <!-- ================= Gemini ================= -->
+  <section>
+    <div class="sec-title">Gemini API</div>
+
+    <div class="rows" id="gm-status"><div class="val dim">読み込んでいます…</div></div>
+
+    <div class="field">
+      <label for="gm-key">APIキー <span class="hint">— 保存すると暗号化され、以後は平文を取り出せません</span></label>
+      <div class="input-row">
+        <input type="password" id="gm-key" placeholder="AIza… で始まるキーを貼り付けてください"
+               autocomplete="off" spellcheck="false">
+        <button id="gm-toggle" type="button">表示</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="gm-model">モデル</label>
+      <div class="input-row">
+        <select id="gm-model"><option value="">（未取得）</option></select>
+        <button id="gm-refresh" type="button">一覧を取得</button>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button id="gm-save" class="primary">保存する</button>
+      <button id="gm-test">疎通テスト</button>
+      <button id="gm-delete" class="danger">キーを削除</button>
+    </div>
+    <div class="msg" id="gm-msg"></div>
+
+    <div class="note">
+      キーは <code>backend/data/app.db</code> に Fernet で暗号化して保存されます。
+      復号鍵は <code>backend/.secret.key</code>（または環境変数 <code>TOKEN_ENCRYPTION_KEY</code>）です。
+      画面に返るのはマスク済みの文字列だけで、平文を返すAPIは用意されていません。
+    </div>
+  </section>
+
+  <!-- ================= Google ================= -->
+  <section>
+    <div class="sec-title">Google 連携（カレンダー / ToDo / メール）</div>
+
+    <div class="rows" id="gg-status"><div class="val dim">読み込んでいます…</div></div>
+
+    <div class="field">
+      <label for="gg-json">
+        client_secret JSON を貼り付ける <span class="hint">— 手入力より確実です</span>
+      </label>
+      <textarea id="gg-json" rows="4" spellcheck="false" autocomplete="off"
+                placeholder='Cloud Console でシークレットを追加したときにダウンロードできる JSON をそのまま貼り付けてください&#10;{"web":{"client_id":"...","client_secret":"...", ...}}'></textarea>
+      <div class="input-row" style="margin-top:0.4rem">
+        <button id="gg-json-apply" type="button" class="primary">JSONから読み込んで保存・検証</button>
+      </div>
+      <div class="hint" style="font-size:0.7rem;color:var(--text-faint);margin-top:0.35rem">
+        client_id とシークレットが必ず対になるため、組み合わせ違いが起きません。
+        貼り付けた内容は保存後に消去され、どこにも残しません。
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="gg-id">クライアントID <span class="hint">— 認可URLに載るため平文で保存されます</span></label>
+      <div class="input-row">
+        <input type="text" id="gg-id" placeholder="000000000000-xxxxxxxx.apps.googleusercontent.com"
+               autocomplete="off" spellcheck="false">
+      </div>
+      <div class="hint" style="font-size:0.7rem;color:var(--text-faint);margin-top:0.3rem">
+        Cloud Console の<strong>コピーボタン</strong>で取得してください。手入力すると空白や記号が混入し、
+        Google が <code class="inline">401 invalid_client</code> を返します。
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="gg-secret">クライアントシークレット <span class="hint">— 暗号化して保存されます</span></label>
+      <div class="input-row">
+        <input type="password" id="gg-secret" placeholder="GOCSPX-…"
+               autocomplete="off" spellcheck="false">
+        <button id="gg-toggle" type="button">表示</button>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button id="gg-save" class="primary">保存する</button>
+      <button id="gg-verify">ID と シークレットを検証</button>
+      <a class="btn" id="gg-link" href="#"><button id="gg-link-btn">Googleと連携する</button></a>
+      <button id="gg-unlink" class="danger">連携を解除</button>
+    </div>
+    <div class="msg" id="gg-msg"></div>
+
+    <div class="field" style="margin-top:1.2rem">
+      <label class="toggle">
+        <input type="checkbox" id="gg-use"> 予定・メール・ToDo を体力予算に反映する
+      </label>
+      <div class="hint" style="font-size:0.7rem;color:var(--text-faint);margin-left:1.5rem">
+        外すと、連携を保ったまま反映だけを止めます。
+      </div>
+    </div>
+
+    <div class="note">
+      <strong style="color:var(--text-dim)">Google Cloud Console 側の設定</strong>
+      <ol>
+        <li>プロジェクトを作成する</li>
+        <li>「APIとサービス」→ ライブラリ で <code>Google Calendar API</code> / <code>Google Tasks API</code> / <code>Gmail API</code> を有効化する</li>
+        <li>「認証情報」→ OAuth クライアント ID を作成（種別: <strong>ウェブ アプリケーション</strong>）</li>
+        <li>承認済みのリダイレクト URI に、下の値を<strong>そのまま</strong>登録する</li>
+        <li>OAuth 同意画面は「テスト」のままでよい（審査不要）。テストユーザーに自分のアカウントを追加する</li>
+      </ol>
+      <div class="copyline">
+        <input type="text" id="gg-redirect" readonly value="http://localhost:8000/api/v1/auth/google/callback">
+        <button id="gg-copy" type="button">コピー</button>
+      </div>
+      <div style="margin-top:0.9rem">
+        取得するのは「拘束時間」「未読の重要メール件数」「期限が今日以前のToDo件数」だけです。
+        予定のタイトル、メールの件名や本文は取得しません。要求する権限はすべて読み取り専用です。
+      </div>
+    </div>
+  </section>
+
+  <div class="disclaimer">
+    気象データと体調の関連は、体感を説明するための目安として扱っています。医学的な診断・治療の代替ではありません。
+    体調不良が続く場合は医療機関を受診してください。
+  </div>
+</div>
+
+<script>
+"use strict";
+
+/* ============================================================
+   バックエンドとの通信
+   localhost / 127.0.0.1 は別オリジン扱いになるため、開いたホストに合わせる
+   ============================================================ */
+const API_BASE = `http://${location.hostname || "localhost"}:8000/api/v1`;
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
+
+async function api(path, method = "GET", body = null) {
+  try {
+    const res = await fetch(API_BASE + path, {
+      method,
+      headers: body ? { "Content-Type": "application/json" } : undefined,
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    const text = await res.text();
+    return { ok: res.ok, status: res.status, data: text ? JSON.parse(text) : null };
+  } catch {
+    return null;   // バックエンド未起動
+  }
+}
+
+function setMsg(id, text, cls = "") {
+  const el = $(id);
+  el.textContent = text;
+  el.className = "msg" + (cls ? " " + cls : "");
+}
+
+// FastAPI のエラー本文は detail が文字列のことも配列のこともある
+function detailOf(r) {
+  if (!r) return "バックエンドに接続できません。";
+  const d = r.data && r.data.detail;
+  if (!d) return `エラー（HTTP ${r.status}）`;
+  if (typeof d === "string") return d;
+  return d.map(e => e.msg || JSON.stringify(e)).join(" / ");
+}
+
+// パスワード欄の表示切替。入力中の値をこちらから読み書きはしない
+function bindToggle(btnId, inputId) {
+  $(btnId).addEventListener("click", () => {
+    const input = $(inputId);
+    const hidden = input.type === "password";
+    input.type = hidden ? "text" : "password";
+    $(btnId).textContent = hidden ? "隠す" : "表示";
+  });
+}
+bindToggle("gm-toggle", "gm-key");
+bindToggle("gg-toggle", "gg-secret");
+
+/* ------------------------------------------------------------
+   Gemini
+   ------------------------------------------------------------ */
+async function loadGemini() {
+  const r = await api("/settings/gemini");
+  if (!r) {
+    $("gm-status").innerHTML = `<div class="row"><span>バックエンド</span><span class="val ng">未起動</span></div>`;
+    setMsg("gm-msg", "backend で uvicorn を起動してください。", "ng");
+    return null;
+  }
+  const s = r.data;
+  const src = s.source === "env" ? "環境変数" : s.source === "settings" ? "この画面で保存" : "—";
+  $("gm-status").innerHTML = `
+    <div class="row"><span>APIキー</span>
+      <span class="val ${s.configured ? "ok" : "warn"}">${s.configured ? "登録済み" : "未登録"}</span></div>
+    <div class="row"><span>保存されている値</span>
+      <span class="val mono dim">${s.masked_key ? esc(s.masked_key) : "—"}</span></div>
+    <div class="row"><span>取得元</span><span class="val dim">${esc(src)}</span></div>
+    <div class="row"><span>使用するモデル</span><span class="val mono">${esc(s.model)}</span></div>
+    <div class="row"><span>SDK (google-genai)</span>
+      <span class="val ${s.sdk_installed ? "ok" : "ng"}">${s.sdk_installed ? "利用可能" : "未インストール"}</span></div>
+  `;
+
+  // モデル欄。現在値は必ず選択肢に入れておく
+  const sel = $("gm-model");
+  if (!sel.options.length || sel.options[0].value === "") {
+    sel.innerHTML = `<option value="${esc(s.model)}" selected>${esc(s.model)}</option>`;
+  }
+  $("gm-delete").disabled = !s.configured;
+  $("gm-test").disabled = !s.configured;
+  $("gm-refresh").disabled = !s.configured;
+  return s;
+}
+
+$("gm-save").addEventListener("click", async () => {
+  const key = $("gm-key").value.trim();
+  const model = $("gm-model").value;
+  if (!key && !model) { setMsg("gm-msg", "APIキーを入力してください。", "ng"); return; }
+
+  const body = {};
+  if (key) body.api_key = key;
+  if (model) body.model = model;
+
+  setMsg("gm-msg", "保存しています…");
+  const r = await api("/settings/gemini", "PUT", body);
+  if (r && r.ok) {
+    $("gm-key").value = "";                       // 入力欄に残さない
+    $("gm-key").type = "password";
+    $("gm-toggle").textContent = "表示";
+    await loadGemini();
+    setMsg("gm-msg", "保存しました。", "ok");
+  } else {
+    setMsg("gm-msg", detailOf(r), "ng");
+  }
+});
+
+$("gm-refresh").addEventListener("click", async () => {
+  setMsg("gm-msg", "モデル一覧を取得しています…");
+  const r = await api("/settings/gemini/models");
+  if (r && r.ok && Array.isArray(r.data) && r.data.length) {
+    const cur = $("gm-model").value;
+    $("gm-model").innerHTML = r.data
+      .map(n => `<option value="${esc(n)}"${n === cur ? " selected" : ""}>${esc(n)}</option>`).join("");
+    setMsg("gm-msg", `${r.data.length} 件のモデルが利用できます。`, "ok");
+  } else {
+    setMsg("gm-msg", detailOf(r), "ng");
+  }
+});
+
+$("gm-test").addEventListener("click", async () => {
+  setMsg("gm-msg", "接続を確認しています…");
+  const r = await api("/settings/gemini/test", "POST");
+  if (r && r.ok) setMsg("gm-msg", (r.data.ok ? "応答: " : "") + r.data.message, r.data.ok ? "ok" : "ng");
+  else setMsg("gm-msg", detailOf(r), "ng");
+});
+
+$("gm-delete").addEventListener("click", async () => {
+  setMsg("gm-msg", "削除しています…");
+  const r = await api("/settings/gemini", "DELETE");
+  await loadGemini();
+  setMsg("gm-msg", r && r.ok ? "保存済みのキーを削除しました。" : detailOf(r), r && r.ok ? "ok" : "ng");
+});
+
+/* ------------------------------------------------------------
+   Google
+   ------------------------------------------------------------ */
+async function loadGoogle() {
+  const r = await api("/settings/google");
+  if (!r) {
+    $("gg-status").innerHTML = `<div class="row"><span>バックエンド</span><span class="val ng">未起動</span></div>`;
+    return null;
+  }
+  const s = r.data;
+  $("gg-status").innerHTML = `
+    <div class="row"><span>OAuthクライアント</span>
+      <span class="val ${s.configured ? "ok" : "warn"}">${s.configured ? "登録済み" : "未登録"}</span></div>
+    <div class="row"><span>クライアントID</span>
+      <span class="val mono dim">${s.client_id ? esc(s.client_id) : "—"}</span></div>
+    <div class="row"><span>アカウント連携</span>
+      <span class="val ${s.linked ? "ok" : "warn"}">${s.linked ? "連携済み" : "未連携"}</span></div>
+    <div class="row"><span>連携した日時</span>
+      <span class="val dim">${s.linked_at ? esc(s.linked_at.replace("T", " ").slice(0, 19)) + " UTC" : "—"}</span></div>
+    <div class="row"><span>要求する権限</span>
+      <span class="val mono dim">${s.scopes.map(x => esc(x.split("/auth/").pop())).join("<br>")}</span></div>
+  `;
+
+  $("gg-use").checked = s.use_context;
+  $("gg-unlink").disabled = !s.linked;
+  $("gg-link-btn").disabled = !s.configured;
+  $("gg-verify").disabled = !s.configured;
+  // 認可のリダイレクト先は localhost で登録する前提のため、ここは固定で localhost を使う
+  $("gg-link").href = s.configured ? "http://localhost:8000/api/v1/auth/google/login" : "#";
+  return s;
+}
+
+// client_id の形。バックエンドの _CLIENT_ID_RE と同じ判定をこちらでも行い、
+// 送信前に気づけるようにする（判定の正はバックエンド側）
+const CLIENT_ID_RE = /^\d+-[a-z0-9]+\.apps\.googleusercontent\.com$/;
+
+$("gg-save").addEventListener("click", async () => {
+  const id = $("gg-id").value.trim();
+  const secret = $("gg-secret").value.trim();
+  if (!id && !secret) { setMsg("gg-msg", "クライアントIDとシークレットを入力してください。", "ng"); return; }
+
+  if (id && !CLIENT_ID_RE.test(id)) {
+    const why = [];
+    if (/\s/.test(id)) why.push("空白が入っています");
+    const bad = [...new Set([...id].filter(c => !/[a-zA-Z0-9.\-]/.test(c)))];
+    if (bad.length) why.push("使えない文字: " + bad.join(" "));
+    if (!id.endsWith(".apps.googleusercontent.com")) why.push("末尾が .apps.googleusercontent.com ではありません");
+    setMsg("gg-msg",
+      "クライアントIDの形式が正しくありません" + (why.length ? "（" + why.join(" / ") + "）" : "") +
+      "。Cloud Console のコピーボタンで取得して貼り付けてください。", "ng");
+    return;
+  }
+
+  const body = {};
+  if (id) body.client_id = id;
+  if (secret) body.client_secret = secret;
+
+  setMsg("gg-msg", "保存しています…");
+  const r = await api("/settings/google", "PUT", body);
+  if (r && r.ok) {
+    $("gg-secret").value = "";                    // シークレットは入力欄に残さない
+    $("gg-secret").type = "password";
+    $("gg-toggle").textContent = "表示";
+    await loadGoogle();
+    // 保存しただけでは正否が分からない。認可まで進んでから失敗すると原因が分かりにくいので、
+    // ここで組み合わせを検証してしまう
+    await verifyGoogle("保存しました。");
+  } else {
+    setMsg("gg-msg", detailOf(r), "ng");
+  }
+});
+
+// 認可画面を通さずに client_id と client_secret の組み合わせだけを確かめる。
+// シークレットの誤りは、これが無いと「ログインは通るのに最後で落ちる」形でしか出ない
+async function verifyGoogle(prefix = "") {
+  setMsg("gg-msg", prefix + "Googleに問い合わせています…");
+  const r = await api("/settings/google/test", "POST");
+  if (r && r.ok) setMsg("gg-msg", prefix + r.data.message, r.data.ok ? "ok" : "ng");
+  else setMsg("gg-msg", detailOf(r), "ng");
+}
+
+$("gg-verify").addEventListener("click", () => verifyGoogle());
+
+/* ------------------------------------------------------------
+   client_secret JSON からの取り込み
+   Cloud Console がシークレット作成時に出す JSON をそのまま受け取る。
+   2つの値を手で運ぶのをやめれば、組み合わせ違いも転記ミスも起きない
+   ------------------------------------------------------------ */
+$("gg-json-apply").addEventListener("click", async () => {
+  const raw = $("gg-json").value.trim();
+  if (!raw) { setMsg("gg-msg", "JSONを貼り付けてください。", "ng"); return; }
+
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    setMsg("gg-msg", "JSONとして読めませんでした。ファイルの中身をそのまま貼り付けてください。", "ng");
+    return;
+  }
+
+  // ウェブアプリは "web"、デスクトップは "installed" の下に入る
+  const c = parsed.web || parsed.installed || parsed;
+  const id = (c.client_id || "").trim();
+  const secret = (c.client_secret || "").trim();
+
+  if (!id || !secret) {
+    setMsg("gg-msg", "JSONに client_id または client_secret が見つかりません。", "ng");
+    return;
+  }
+  if (parsed.installed && !parsed.web) {
+    setMsg("gg-msg",
+      "これはデスクトップ用クライアントのJSONです。ウェブ アプリケーション用を使ってください。", "ng");
+    return;
+  }
+
+  // 入力欄にも反映して、何が保存されるかを見えるようにする
+  $("gg-id").value = id;
+  $("gg-secret").value = secret;
+
+  setMsg("gg-msg", "保存しています…");
+  const r = await api("/settings/google", "PUT", { client_id: id, client_secret: secret });
+  if (!r || !r.ok) { setMsg("gg-msg", detailOf(r), "ng"); return; }
+
+  // 貼り付けた内容も入力欄も残さない
+  $("gg-json").value = "";
+  $("gg-secret").value = "";
+  $("gg-secret").type = "password";
+  $("gg-toggle").textContent = "表示";
+  await loadGoogle();
+
+  // 保存しただけでは正否が分からないので、そのまま検証まで走らせる
+  await verifyGoogle("保存しました。");
+});
+
+$("gg-use").addEventListener("change", async () => {
+  const r = await api("/settings/google", "PUT", { use_context: $("gg-use").checked });
+  if (r && r.ok) {
+    setMsg("gg-msg", $("gg-use").checked ? "体力予算に反映します。" : "反映を止めました。", "ok");
+  } else {
+    setMsg("gg-msg", detailOf(r), "ng");
+    await loadGoogle();
+  }
+});
+
+$("gg-unlink").addEventListener("click", async () => {
+  setMsg("gg-msg", "解除しています…");
+  const r = await api("/settings/google", "DELETE");
+  await loadGoogle();
+  setMsg("gg-msg",
+    r && r.ok
+      ? "連携を解除しました。Google側の許可も取り消す場合は myaccount.google.com/permissions から削除してください。"
+      : detailOf(r),
+    r && r.ok ? "ok" : "ng");
+});
+
+$("gg-copy").addEventListener("click", async () => {
+  const el = $("gg-redirect");
+  try {
+    await navigator.clipboard.writeText(el.value);
+    setMsg("gg-msg", "リダイレクトURIをコピーしました。", "ok");
+  } catch {
+    // クリップボードが使えない環境では選択状態にして手動コピーに任せる
+    el.select();
+    setMsg("gg-msg", "選択しました。Ctrl+C でコピーしてください。");
+  }
+});
+
+/* ------------------------------------------------------------ */
+(async function init() {
+  await loadGemini();
+  await loadGoogle();
+})();
+</script>
+</body>
+</html>
