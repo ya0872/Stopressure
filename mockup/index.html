@@ -184,6 +184,19 @@ button.act.rec { color: var(--accent); }
 .row { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 0.85rem 0; border-bottom: 1px solid var(--border); font-size: 0.88rem; }
 .row .val { color: var(--text-dim); font-size: 0.8rem; }
 .pill { font-size: 0.68rem; padding: 0.15rem 0.5rem; border: 1px solid var(--border); border-radius: 99px; color: var(--text-faint); }
+.pill.ok { color: var(--accent); border-color: var(--accent-dim); }
+
+/* 設定フォーム（バックエンド連携） */
+.field { display: flex; flex-direction: column; gap: 0.4rem; padding: 0.9rem 0; border-bottom: 1px solid var(--border); }
+.field label { font-size: 0.82rem; }
+.field input, .field select {
+  background: var(--bg-raised); color: var(--text);
+  border: 1px solid var(--border); border-radius: 4px;
+  padding: 0.55rem 0.7rem; font-family: inherit; font-size: 0.85rem;
+  transition: border-color var(--dur) var(--ease);
+}
+.field input:focus, .field select:focus { outline: none; border-color: var(--accent-dim); }
+.hint { font-size: 0.7rem; color: var(--text-faint); line-height: 1.7; }
 
 /* ---------- 免責事項（常時表示。設計書 §1.3 実装必須） ---------- */
 .disclaimer {
@@ -277,9 +290,10 @@ button.act.rec { color: var(--accent); }
       </div>
       <p class="mocknote" id="speech-note"></p>
       <div class="reply" id="reply"></div>
+      <p class="mocknote" id="reply-note"></p>
       <p class="mocknote">
-        ※ モックアップでは定型文を返します。実装時はローカルLLM（Ollama + Gemma）が生成し、
-        VOICEVOX ENGINE で読み上げます。入力内容は外部に送信しません。
+        ※ 入力した内容は Gemini API（Google）に送信されます。応答はローカルのSQLiteに記録されます。
+        バックエンドが未起動、またはAPIキーが未設定のときは定型文を表示します。
       </p>
     </section>
   </div>
@@ -296,7 +310,43 @@ button.act.rec { color: var(--accent); }
     </section>
 
     <section>
-      <div class="sec-title">連携</div>
+      <div class="sec-title">Gemini API</div>
+      <div class="row"><span>バックエンド</span><span class="pill" id="gm-backend">確認中…</span></div>
+      <div class="row"><span>APIキー</span><span class="pill" id="gm-key">—</span></div>
+
+      <div class="field">
+        <label for="gm-input">APIキーを登録する</label>
+        <input type="password" id="gm-input" placeholder="AIza… で始まるキーを貼り付け"
+               autocomplete="off" spellcheck="false">
+        <div class="hint">
+          暗号化してローカルのSQLiteに保存します。保存後、キーの平文が画面に戻ることはありません。
+          Google AI Studio で発行できます。
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="gm-model">モデル</label>
+        <select id="gm-model"><option value="">（バックエンド未接続）</option></select>
+        <div class="hint">キー登録後、このアカウントで使えるモデルが一覧に入ります。</div>
+      </div>
+
+      <div class="btn-row">
+        <button class="act" id="gm-save">保存する</button>
+        <button class="act" id="gm-test">接続テスト</button>
+        <button class="act" id="gm-delete">キーを削除</button>
+      </div>
+      <p class="mocknote" id="gm-msg"></p>
+
+      <div class="field" style="border-bottom:none">
+        <div class="hint">
+          夜の吐き出しの内容は Gemini に送信されません。ローカルLLM専用としてバックエンド側で
+          拒否されます（設計書 §3.3）。ここで設定したキーが使われるのは、献立・ご褒美・語り口の変換だけです。
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="sec-title">その他の連携</div>
       <div class="row"><span>Google カレンダー</span><span class="pill">未接続（フェーズ3）</span></div>
       <div class="row"><span>Gmail</span><span class="pill">未接続（フェーズ3）</span></div>
       <div class="row"><span>Ollama（ローカルLLM）</span><span class="pill">未接続（フェーズ4）</span></div>
@@ -630,25 +680,50 @@ function drawChart(p, now) {
 /* ============================================================
    8. 夜の吐き出し
    ============================================================ */
-// 全肯定の定型文。実装時はローカルLLMが生成する
+// バックエンドが使えないときの定型文。UIを空にしないための最低保証
 const REPLIES = [
-  "無事に一日を終えられただけで満点です。<br>気圧がこれだけ動いた日に、それ以上は誰にもできません。",
-  "できなかったのではなく、体が休むことを選んだ日です。<br>今日を越えられたことが、そのまま成果です。",
-  "今日は空模様のほうが荒れていました。<br>あなたの側に落ち度はありません。よく耐えました。",
+  "無事に一日を終えられただけで満点です。気圧がこれだけ動いた日に、それ以上は誰にもできません。",
+  "できなかったのではなく、体が休むことを選んだ日です。今日を越えられたことが、そのまま成果です。",
+  "今日は空模様のほうが荒れていました。あなたの側に落ち度はありません。よく耐えました。",
 ];
 let replyIdx = 0;
 
-$("btn-send").addEventListener("click", () => {
+$("btn-send").addEventListener("click", async () => {
   const text = $("reflect-input").value.trim();
   if (!text) return;
-  const el = $("reply");
+
+  const el = $("reply"), btn = $("btn-send");
+  btn.disabled = true;
+  btn.textContent = "受け止めています…";
   el.classList.remove("shown");
+  $("reply-note").textContent = "";
+
+  // 現在のシナリオの省エネレベルを添えて送る（応答の文脈に使われる）
+  const level = toLevel(energyBudget(current).budget).level;
+  const r = await api("/reflection", "POST", { text, level });
+
+  let reply, note;
+  if (r && r.ok) {
+    reply = r.data.reply;
+    note = r.data.fallback
+      ? "※ 生成に失敗したため定型文を表示しています。"
+      : `※ ${r.data.model} が生成しました。`;
+  } else if (r && r.status === 409) {
+    reply = REPLIES[replyIdx++ % REPLIES.length];
+    note = "※ Gemini APIキーが未設定のため定型文です。設定画面から登録してください。";
+  } else {
+    reply = REPLIES[replyIdx++ % REPLIES.length];
+    note = "※ バックエンドが未起動のため定型文です。";
+  }
+
   // フェードアウトしてから差し替える（急に切り替わらないよう間を置く）
   setTimeout(() => {
-    el.innerHTML = REPLIES[replyIdx % REPLIES.length];
-    replyIdx++;
+    el.textContent = reply;   // 生成文はHTMLとして解釈させない
     el.classList.add("shown");
-    speak(el.textContent);
+    $("reply-note").textContent = note;
+    speak(reply);
+    btn.disabled = false;
+    btn.textContent = "受け止めてもらう";
   }, 400);
 });
 
@@ -708,11 +783,118 @@ sel.addEventListener("change", () => {
   render();
 });
 
+/* ============================================================
+   10. Gemini API 設定（バックエンド連携）
+   バックエンドが未起動でも画面が壊れないよう、通信失敗は「未起動」として扱う
+   ============================================================ */
+const API_BASE = "http://localhost:8000/api/v1";
+
+async function api(path, method = "GET", body = null) {
+  try {
+    const res = await fetch(API_BASE + path, {
+      method,
+      headers: body ? { "Content-Type": "application/json" } : undefined,
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    const text = await res.text();
+    return { ok: res.ok, status: res.status, data: text ? JSON.parse(text) : null };
+  } catch {
+    return null;  // バックエンド未起動
+  }
+}
+
+const setMsg = t => { $("gm-msg").textContent = t; };
+
+// 設定状態を読み込んで画面に反映する
+async function loadGeminiStatus() {
+  const backend = $("gm-backend"), keyPill = $("gm-key"), sel = $("gm-model");
+  const r = await api("/settings/gemini");
+
+  if (!r) {
+    backend.textContent = "未起動";
+    backend.className = "pill";
+    keyPill.textContent = "—";
+    sel.innerHTML = '<option value="">（バックエンド未接続）</option>';
+    setMsg("バックエンドが起動していません。backend で uvicorn を起動してください。");
+    return;
+  }
+
+  backend.textContent = "接続済み";
+  backend.className = "pill ok";
+  const s = r.data;
+
+  if (!s.sdk_installed) {
+    keyPill.textContent = "SDK未インストール";
+    keyPill.className = "pill";
+  } else if (s.configured) {
+    // 平文は返ってこない。マスク済みの文字列と取得元だけを表示する
+    keyPill.textContent = `${s.masked_key}（${s.source === "env" ? "環境変数" : "保存済み"}）`;
+    keyPill.className = "pill ok";
+  } else {
+    keyPill.textContent = "未設定";
+    keyPill.className = "pill";
+  }
+
+  // モデル一覧はキーがある場合のみ取得できる
+  if (s.configured) {
+    const m = await api("/settings/gemini/models");
+    if (m && m.ok && Array.isArray(m.data) && m.data.length) {
+      sel.innerHTML = m.data
+        .map(n => `<option value="${n}"${n === s.model ? " selected" : ""}>${n}</option>`).join("");
+      return;
+    }
+  }
+  sel.innerHTML = `<option value="${s.model}" selected>${s.model}</option>`;
+}
+
+$("gm-save").addEventListener("click", async () => {
+  const key = $("gm-input").value.trim();
+  const model = $("gm-model").value;
+  if (!key && !model) { setMsg("APIキーかモデルを指定してください。"); return; }
+
+  const body = {};
+  if (key) body.api_key = key;
+  if (model) body.model = model;
+
+  setMsg("保存しています…");
+  const r = await api("/settings/gemini", "PUT", body);
+  if (!r) { setMsg("バックエンドに接続できません。"); return; }
+  if (!r.ok) { setMsg(`保存に失敗しました: ${r.data?.detail ?? r.status}`); return; }
+
+  $("gm-input").value = "";  // 入力欄に平文を残さない
+  setMsg("保存しました。");
+  loadGeminiStatus();
+});
+
+$("gm-test").addEventListener("click", async () => {
+  setMsg("接続を確認しています…");
+  const r = await api("/settings/gemini/test", "POST");
+  if (!r) { setMsg("バックエンドに接続できません。"); return; }
+  setMsg(r.data?.ok ? `疎通しました: ${r.data.message}` : `失敗: ${r.data?.message ?? r.status}`);
+});
+
+// 削除は2段階クリックで確認する（confirm はブラウザを固めるため使わない）
+let deleteArmed = false;
+$("gm-delete").addEventListener("click", async () => {
+  if (!deleteArmed) {
+    deleteArmed = true;
+    setMsg("もう一度押すと、保存済みのキーを削除します。");
+    setTimeout(() => { deleteArmed = false; }, 5000);
+    return;
+  }
+  deleteArmed = false;
+  const r = await api("/settings/gemini", "DELETE");
+  if (!r) { setMsg("バックエンドに接続できません。"); return; }
+  setMsg("削除しました。");
+  loadGeminiStatus();
+});
+
 // OS側のテーマが切り替わったら差し色を再計算する
 matchMedia("(prefers-color-scheme: light)").addEventListener("change", render);
 
 $("scenario-desc").textContent = current.desc;
 render();
+loadGeminiStatus();
 </script>
 </body>
 </html>

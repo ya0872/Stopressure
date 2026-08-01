@@ -36,11 +36,25 @@ python -m http.server 8765 --directory mockup
 
 `file://` でも開けるが、ブラウザ拡張から操作する場合は上記のサーバー経由にする。
 
-## Known environment issue
+## Known environment issue: proxy
 
-npm cannot reach `registry.npmjs.org` from this machine (`ETIMEDOUT`) even though PowerShell can
-reach it over HTTPS and no proxy is configured. Workaround to try before assuming npm is unusable:
+This machine sits behind the KIT campus proxy `http://wwwproxy-a10.kanazawa-it.ac.jp:8080`.
+Raw TCP to the outside fails; only proxied HTTPS gets through. `git push` and `npm install` therefore
+time out (`ETIMEDOUT` / `Could not connect to server`) unless the proxy is passed explicitly.
+
+The proxy is NOT discoverable from `git config`, `netsh winhttp show proxy`, or the WinINET registry
+keys — all of them report "no proxy". It only shows up via .NET:
 
 ```powershell
-$env:NODE_OPTIONS="--dns-result-order=ipv4first"; npm create vite@latest frontend -- --template react-ts
+[System.Net.WebRequest]::GetSystemWebProxy().GetProxy("https://github.com").AbsoluteUri
 ```
+
+Diagnostic tell: `Test-NetConnection github.com -Port 443` fails while
+`Invoke-WebRequest https://github.com` returns 200.
+
+```powershell
+# このシェル限りでプロキシ経由にする
+$env:HTTPS_PROXY="http://wwwproxy-a10.kanazawa-it.ac.jp:8080"; $env:HTTP_PROXY=$env:HTTPS_PROXY
+```
+
+学外ではこのプロキシは使えないため、恒久設定にする場合は解除手順とセットで扱うこと。
