@@ -1,0 +1,51 @@
+"""SQLiteへの接続とスキーマ初期化。
+
+単一ユーザーのローカル運用のため、サーバープロセスを持たないSQLiteで十分。
+"""
+from __future__ import annotations
+
+import sqlite3
+from pathlib import Path
+
+DB_PATH = Path(__file__).resolve().parent.parent / "data" / "app.db"
+
+# --- スキーマ定義 -------------------------------------------------------------
+# app_setting は「平文で持ってよい設定」と「暗号化が必要な設定」を1テーブルで扱う。
+# value と encrypted のどちらか一方だけを使う。
+_SCHEMA = """
+CREATE TABLE IF NOT EXISTS app_setting (
+    key        TEXT PRIMARY KEY,
+    value      TEXT,         -- 平文で良い設定（モデル名など）
+    encrypted  BLOB,         -- 機微な設定（APIキー）
+    updated_at TEXT NOT NULL
+);
+
+-- 夜の吐き出しの記録。felt は体感（1:つらい 2:普通 3:平気）で、F-15の学習に使う
+CREATE TABLE IF NOT EXISTS reflection (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    date       TEXT NOT NULL,
+    user_text  TEXT NOT NULL,
+    reply_text TEXT NOT NULL,
+    level      INTEGER,
+    felt       INTEGER,
+    created_at TEXT NOT NULL
+);
+"""
+
+
+def get_conn() -> sqlite3.Connection:
+    """接続を返す。呼び出し側で close すること。"""
+    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+def init_db() -> None:
+    """起動時にスキーマを作成する。既存テーブルがあれば何もしない。"""
+    conn = get_conn()
+    try:
+        conn.executescript(_SCHEMA)
+        conn.commit()
+    finally:
+        conn.close()

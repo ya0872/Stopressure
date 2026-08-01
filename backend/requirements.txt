@@ -1,0 +1,11 @@
+# 低気圧のすゝめ バックエンド依存パッケージ
+fastapi>=0.115
+uvicorn[standard]>=0.32
+pydantic>=2.9
+cryptography>=43          # APIキーの暗号化保存（Fernet）
+google-genai>=1.0         # Gemini API 公式SDK
+python-dotenv>=1.0
+
+# 開発用
+pytest>=8.0
+httpx>=0.27               # FastAPI の TestClient が内部で使用する
