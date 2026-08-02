@@ -186,8 +186,8 @@ const DashboardView = () => {
       <GentleBlockOverlay reason={reason} />
       <div className={`wrap ${blocked ? 'blocked' : ''}`}>
         <header>
-          <div className="title">低気圧のすゝめ</div>
-          <div className="subtitle">ATMOSPHERE STUDIO</div>
+          <div className="title">停気圧</div>
+          <div className="subtitle">STOPRESSURE</div>
         </header>
 
         <nav className="dashboard-nav">

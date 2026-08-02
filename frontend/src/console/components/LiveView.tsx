@@ -80,8 +80,8 @@ export function LiveView({ onOpenSettings }: { onOpenSettings: () => void }) {
 
       <div className="wrap">
         <header>
-          <div className="title">低気圧のすゝめ</div>
-          <div className="subtitle">ATMOSPHERE STUDIO — バックエンド実データ確認</div>
+          <div className="title">停気圧</div>
+          <div className="subtitle">STOPRESSURE — バックエンド実データ確認</div>
         </header>
 
         {data.backend === 'down' ? (
