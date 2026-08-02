@@ -2,11 +2,11 @@
 import "./Login.css";
 // Google login Button
 import { GoogleLogin } from "@react-oauth/google";
-import { jwtDecode } from "jwt-decode";
+//import { jwtDecode } from "jwt-decode";
 import type { CredentialResponse } from "@react-oauth/google";
 
 interface LoginProps {
-  onLoginSuccess?: (credentialResponse: CredentialResponse, decoded: unknown) => void;
+  onLoginSuccess?: (credentialResponse: CredentialResponse) => void;
 }
 
 export const Login = ({ onLoginSuccess }: LoginProps) => {
@@ -15,10 +15,9 @@ export const Login = ({ onLoginSuccess }: LoginProps) => {
         if (!credentialResponse.credential) {
             throw new Error("credentialResponse.credential is undefined");
         }
-        const decoded = jwtDecode(credentialResponse.credential);
-        console.log("ログイン成功:", decoded);
+        console.log("ログイン成功:");
         if (onLoginSuccess) {
-            onLoginSuccess(credentialResponse, decoded);
+            onLoginSuccess(credentialResponse);
         }
     };
 
