@@ -1,4 +1,6 @@
-import React, { useEffect, useRef } from "react";
+// React 本体は参照していない（JSX は自動 import される）。
+// 名前で import すると noUnusedLocals に触れてビルドが落ちる
+import { useEffect, useRef } from "react";
 import "./Login.css";
 import { useGoogleLogin } from "@react-oauth/google";
 
