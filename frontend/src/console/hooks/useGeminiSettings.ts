@@ -61,7 +61,9 @@ export function useGeminiSettings() {
         setMsg({ text: 'APIキーを入力してください。', tone: 'ng' });
         return false;
       }
-      setMsg({ text: '保存しています…', tone: 'plain' });
+      // バックエンドは保存前にその設定で1回生成して確かめるので、数秒かかることがある。
+      // 「保存しています」だけだと固まったように見えるため、何をしているかを出す
+      setMsg({ text: '設定を確認して保存しています…', tone: 'plain' });
 
       const body: { api_key?: string; model?: string } = {};
       if (apiKey) body.api_key = apiKey;
@@ -86,9 +88,13 @@ export function useGeminiSettings() {
       setMsg(r.kind === 'ok' ? { text: '利用できるモデルがありません。', tone: 'ng' } : failure(r));
       return;
     }
-    setModels(r.data);
+    // 一覧で置き換えず、保存済みのモデルは必ず選択肢に残す。一覧から外れると
+    // <select> の value がどの <option> とも一致せず、ブラウザが先頭を表示するため
+    // 「保存されている値」と「選択中に見える値」が食い違う
+    const current = status?.model;
+    setModels(current && !r.data.includes(current) ? [current, ...r.data] : r.data);
     setMsg({ text: `${r.data.length} 件のモデルが利用できます。`, tone: 'ok' });
-  }, []);
+  }, [status]);
 
   const test = useCallback(async () => {
     setMsg({ text: '接続を確認しています…', tone: 'plain' });

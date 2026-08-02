@@ -39,6 +39,26 @@ health-app UI pattern gets implemented by reflex.
 
 The medical disclaimer (`docs/design.md` §1.3) is a required UI element, not optional copy.
 
+## Gemini model selection — a saved model that cannot generate is invisible
+
+Fixed 2026-08-02. Picking a model in `console.html` used to be able to brick the app silently:
+`/reflection` would return `200` with `model: null` and a canned reply forever, and nothing in the
+UI looked wrong. Three facts make this trap, and none of them are visible from the API:
+
+- **`models.list()` does not tell you what works.** TTS, image, computer-use and omni models all
+  advertise `generateContent` in `supported_actions`, yet reject a text-in/text-out call
+  (`400 … response modalities (TEXT) is not supported`). `_NON_TEXT_FRAGMENTS` in
+  `services/gemini.py` drops them by name. That list is a heuristic and will miss new families.
+- **A perfectly valid text model can still be unusable.** The pro tier returns
+  `429 RESOURCE_EXHAUSTED` on a free key. No field in the list response predicts this.
+- Therefore **`PUT /settings/gemini` verifies before it writes** (`gemini.verify_model` — one real
+  call) and returns `400` without touching the DB when it fails. Do not remove that check to "save
+  an API call"; the whole failure mode is that a bad value persists and then hides.
+
+Corollary: `routers/reflection.py` must keep logging the swallowed exception. Returning a canned
+reply is deliberate (§4.7), but the *reason* has to reach the uvicorn log — with the fallback silent,
+"model is null" was the only symptom and it names no cause.
+
 ## Usage limiting (F-16) — the block exists twice, but only one copy enforces
 
 Built 2026-08-02 to `docs/design.md` §4.8. Per-phase **call counts**, not the "one hour per phase"
@@ -50,7 +70,7 @@ resets on reload and is bypassed entirely by hitting `:8000` directly. The enfor
 `backend/app/services/usage_limit.py` and nowhere else. **When a bypass shows up, fix the backend —
 tightening the frontend does not close anything.**
 
-Four rules that look like details but are the feature:
+Five rules that look like details but are the feature:
 
 - **`/reflection` never returns 429.** Past the limit it returns 200 with `LIMIT_REACHED_REPLY`,
   saves the text, and does not call Gemini. Rejecting it would recreate the "吐き出したのに無視された"
@@ -64,10 +84,22 @@ Four rules that look like details but are the feature:
 - **Do not add viewing endpoints to `usage_limit.ENDPOINTS`.** `/atmosphere`, `/daily-plan` and
   `/context` must work at all hours — §4.8 limits the conversational features, not the ability to
   check your own condition.
+- **`ReflectionResponse.reason` (`limit` | `error` | `null`) is for the developer console, never the
+  screen.** Hitting the limit and Gemini failing both return `200` + `fallback: true` +
+  `model: null`; without `reason` those are indistinguishable, and the two need opposite responses
+  (wait vs. fix the config). It carries no count, so §1.2's ban on "あと3回" still holds. Do not
+  render it, and do not add `count`/`limit` alongside it.
 
 `usage_counter.date` is a **local** date while every other table records UTC. Phases are `hour // 6`
 of the user's day; counting in UTC shifts the boundary by 9 hours and folds the small hours into the
 previous day.
+
+**Testing against the limit**: set `USAGE_LIMIT_REFLECTION=50` (or `USAGE_LIMIT_GENERATE`) in
+`backend/.env` and restart uvicorn. Do **not** raise `thresholds.yaml` — that file is the shipped
+config and a forgotten edit rides along in a commit, silently disabling F-16. `.env` is gitignored,
+so it cannot. A live override logs a WARNING once per process so a forgotten one is visible; a
+malformed value (non-numeric, `< 1`) is ignored with a warning rather than crashing or, worse,
+becoming a permanent block.
 
 ## Resolved: level 5 reachability (§4.2.1)
 

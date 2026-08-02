@@ -10,12 +10,14 @@ import { Healing } from './Healing';
 /* ============================================================
    アプリケーション依存防止機能（ジェントル・ブロック）
 
-   - 深夜帯（23:00〜翌5:00）に入ったら自動でブロック
+   - 深夜帯（2:00〜5:00）に入ったら自動でブロック
    - 1セッション内の対話回数（タブ切り替え等）が上限に達したらブロック
    - ブロック中はオーバーレイで全操作を遮断し、休息を促す
-   ============================================================ */
 
-/** 深夜帯の定義（時） */
+   ここでの遮断はすべて表示上のもので、React の state だけで持つためリロードで消える。
+   強制力があるのは backend/app/services/usage_limit.py だけ（docs/design.md §4.8）。
+   迂回が見つかったときに直すべきはバックエンドであって、ここではない。
+   ============================================================ */
 const NIGHT_START = 2;
 const NIGHT_END = 5;
 
@@ -308,9 +310,18 @@ const DashboardView = () => {
         <div className={`view ${activeView === 'settings' ? 'active' : ''}`} id="view-settings">
           <section>
             <div className="sec-title">設定</div>
+            {/*
+              以前は mockup/settings.html（別サーバー :8765）を案内していたが、
+              src/console/ に SettingsView が実装済みなので、そちらへ誘導する。
+              vite.config.ts のマルチページ入力に console.html が入っているため、
+              開発サーバー・ビルド後のどちらでも相対リンクで開ける。
+            */}
             <p className="widget-note">
-              この画面は未実装です。現時点では mockup/settings.html から
-              Gemini APIキーとGoogle連携を登録してください。
+              Gemini APIキーとGoogle連携の登録は
+              {' '}
+              <a href="./console.html">設定コンソール</a>
+              {' '}
+              から行えます。
             </p>
           </section>
         </div>
