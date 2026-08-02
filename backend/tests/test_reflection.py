@@ -57,6 +57,31 @@ def test_falls_back_when_generation_fails(with_key, monkeypatch):
     assert res.json()["fallback"] is True
     assert res.json()["reply"]
     assert res.json()["model"] is None
+    # 上限到達（reason='limit'）と同じ見た目にしない。対処が正反対のため
+    assert res.json()["reason"] == "error"
+
+
+def test_limit_and_failure_are_distinguishable(with_key, monkeypatch):
+    """上限到達と生成失敗は、どちらも 200 + fallback + model:null で返るが reason で区別できる。
+
+    ここが同じだと「Geminiが壊れた」のか「今日はもう話した」のか判別できない。
+    実際にその切り分けに失敗した記録が docs/gemini-fallback-fixes-2026-08-02.txt にある。
+    """
+    from app.services import usage_limit
+
+    monkeypatch.setattr(
+        gemini, "generate",
+        lambda *a, **k: gemini.GenerateResult(text="満点です。", model="dummy-model"),
+    )
+    limit = usage_limit.limit_for("reflection")
+    for _ in range(limit):
+        assert client.post("/api/v1/reflection", json={"text": "あ"}).json()["reason"] is None
+
+    body = client.post("/api/v1/reflection", json={"text": "あ"}).json()
+    assert body["reason"] == "limit"
+    assert body["fallback"] is True
+    # 上限に達しても受け取って保存する（門前払いしない）
+    assert body["reply"]
 
 
 def test_requires_api_key(monkeypatch):

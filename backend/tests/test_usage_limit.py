@@ -237,6 +237,32 @@ def test_limits_are_configured():
         assert usage_limit.limit_for(endpoint) > 0
 
 
+def test_env_overrides_the_limit(monkeypatch):
+    """開発時は環境変数で上限を上げられる（USAGE_LIMIT_REFLECTION=50）。
+
+    thresholds.yaml を直接書き換えると戻し忘れがコミットに乗り、依存防止（F-16）が
+    黙って無効になる。backend/.env は .gitignore 済みなのでその事故が起きない。
+    """
+    monkeypatch.setenv("USAGE_LIMIT_REFLECTION", "50")
+    assert usage_limit.limit_for("reflection") == 50
+    # 他のエンドポイントには波及しない
+    monkeypatch.delenv("USAGE_LIMIT_GENERATE", raising=False)
+    assert usage_limit.limit_for("generate") == usage_limit.limit_for("generate")
+
+
+@pytest.mark.parametrize("bad", ["", "abc", "0", "-1", "3.5"])
+def test_broken_env_override_falls_back_to_config(monkeypatch, bad):
+    """壊れた上書きは無視して設定ファイルの値に戻す。
+
+    ここで例外にすると .env のtypo でアプリが起動しなくなる。逆に 0 を通すと
+    「上限0回＝常に遮断」になり、原因の分からない故障になる。どちらも避ける。
+    """
+    monkeypatch.delenv("USAGE_LIMIT_REFLECTION", raising=False)
+    configured = usage_limit.limit_for("reflection")
+    monkeypatch.setenv("USAGE_LIMIT_REFLECTION", bad)
+    assert usage_limit.limit_for("reflection") == configured
+
+
 def test_health_is_not_limited(with_key, spy_gemini, small_limit, frozen_now):
     """閲覧系は回数を消費しない。"""
     for _ in range(10):

@@ -5,6 +5,7 @@ APIキーは書き込み専用として扱う。保存はできるが、平文�
 """
 from __future__ import annotations
 
+import logging
 import re
 
 from fastapi import APIRouter, HTTPException
@@ -13,6 +14,8 @@ from pydantic import BaseModel, Field, field_validator
 from .. import settings_store as store
 from ..crypto import mask
 from ..services import gemini, google_client, google_oauth
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/settings", tags=["settings"])
 
@@ -59,15 +62,49 @@ def get_gemini_status() -> GeminiStatus:
 
 @router.put("/gemini", response_model=GeminiStatus)
 def update_gemini(body: GeminiUpdate) -> GeminiStatus:
-    """APIキーとモデルを保存する。"""
+    """APIキーとモデルを保存する。
+
+    保存する前に、その (キー, モデル) の組で実際に1回生成できることを確かめる。
+    確かめずに書くと、使えないモデル名がそのままDBに残る。そうなると /reflection は
+    毎回 fallback（model: null の定型文）を返し、UIは正常に見えたまま Gemini を
+    一度も通らなくなる。設定画面で「保存しました」と出たものは動く、を守るための検証。
+    """
     if body.api_key is None and body.model is None:
         raise HTTPException(status_code=400, detail="api_key か model のいずれかを指定してください")
 
-    if body.api_key is not None:
-        # 前後の空白は貼り付け事故が多いので落とす
-        store.set_secret(store.KEY_GEMINI_API, body.api_key.strip())
-    if body.model is not None:
-        store.set_plain(store.KEY_GEMINI_MODEL, body.model.strip())
+    # 前後の空白は貼り付け事故が多いので落とす
+    api_key = body.api_key.strip() if body.api_key is not None else None
+    model = body.model.strip() if body.model is not None else None
+    if body.model is not None and not model:
+        raise HTTPException(status_code=400, detail="モデル名が空です")
+
+    # 検証には「保存後に有効になる値」を使う。省略された側は現在値を引き継ぐ
+    effective_key = api_key or store.resolve_gemini_api_key()
+    effective_model = model or store.resolve_gemini_model()
+
+    # キーが無い状態でモデルだけ先に決めておく使い方は許す（呼びようがないため検証も省く）
+    if effective_key:
+        try:
+            gemini.verify_model(effective_key, effective_model)
+        except gemini.GeminiSDKMissing as e:
+            raise HTTPException(status_code=503, detail=str(e)) from e
+        except gemini.GeminiCallFailed as e:
+            # 400 にするのは、直すべきなのが送った値（キーかモデル名）だから。
+            # 502 にすると「Gemini側の一時障害」と読めてしまい、再試行を誘う。
+            # 画面には要約だけを出し、原文はログへ回す（SDKの例外文はJSONまるごとで長い）
+            logger.warning("設定の検証に失敗しました (model=%s)", effective_model, exc_info=True)
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"{effective_model} は使えないため保存しませんでした。"
+                    f"{gemini.describe_failure(e)}"
+                ),
+            ) from e
+
+    if api_key is not None:
+        store.set_secret(store.KEY_GEMINI_API, api_key)
+    if model is not None:
+        store.set_plain(store.KEY_GEMINI_MODEL, model)
 
     return get_gemini_status()
 
@@ -241,5 +278,7 @@ def test_gemini() -> TestResult:
     except gemini.GeminiSDKMissing as e:
         return TestResult(ok=False, message=str(e))
     except gemini.GeminiCallFailed as e:
-        # ネットワーク環境によっては接続自体が失敗しうるため、原因をそのまま見せる
-        return TestResult(ok=False, message=f"呼び出しに失敗しました: {e}")
+        # ネットワーク環境によっては接続自体が失敗しうるため、原因を見せる。
+        # 原文はログにあるので、画面には要約だけを出す
+        logger.warning("疎通テストに失敗しました", exc_info=True)
+        return TestResult(ok=False, message=f"呼び出しに失敗しました: {gemini.describe_failure(e)}")
