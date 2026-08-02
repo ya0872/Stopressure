@@ -57,16 +57,18 @@ export const Healing = ({ onInteraction }: HealingProps) => {
             } else {
                 console.warn('[reflection] 通信に失敗しました', e);
             }
-
-            setReply(responseText);
-            onInteraction?.();
-        } catch {
             setReply(FALLBACK_REPLY);
-            onInteraction?.();
         } finally {
+            // 送信を試みた時点で1回として数える（docs/design.md §4.8.1 のセッション内カウンタ）。
+            // 数えるのは「Geminiが応答したか」ではなく「対話を試みたか」なので、
+            // 成功・失敗のどちらを通っても1回だけ呼ぶ。
+            //
+            // 以前はこの呼び出しが catch の中にしかなく、**正常に送信できた回が
+            // 数えられていなかった**。そのためフロント側の遮断が一度も発火しない。
+            onInteraction?.();
             setIsSending(false);
         }
-    }, [isSending]);
+    }, [isSending, onInteraction]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
