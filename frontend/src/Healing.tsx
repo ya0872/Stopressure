@@ -6,6 +6,7 @@
  * バックエンド側は既存の reflection.py → gemini.generate() をそのまま使う。
  */
 import { useCallback, useState } from 'react';
+import './healing.css';
 
 const API_BASE = import.meta.env.VITE_API_BASE;
 
@@ -13,22 +14,16 @@ const API_BASE = import.meta.env.VITE_API_BASE;
 const FALLBACK_REPLY =
     '無事に一日を終えられただけで満点です。気圧がこれだけ動いた日に、それ以上は誰にもできません。';
 
-interface Message {
-    role: 'user' | 'assistant';
-    text: string;
-}
-
 export const Healing = () => {
-    const [messages, setMessages] = useState<Message[]>([]);
+    const [reply, setReply] = useState<string | null>(null);
     const [inputText, setInputText] = useState('');
     const [isSending, setIsSending] = useState(false);
 
     const sendMessage = useCallback(async (userText: string) => {
         if (!userText.trim() || isSending) return;
 
-        // ユーザーの発言を追加
-        setMessages((prev) => [...prev, { role: 'user', text: userText }]);
         setIsSending(true);
+        setReply(null); // 通信中は前の応答を消す
 
         try {
             const res = await fetch(`${API_BASE}/reflection`, {
@@ -37,17 +32,17 @@ export const Healing = () => {
                 body: JSON.stringify({ text: userText }),
             });
 
-            let reply: string;
+            let responseText: string;
             if (res.ok) {
                 const json = await res.json();
-                reply = json.reply;
+                responseText = json.reply;
             } else {
-                reply = FALLBACK_REPLY;
+                responseText = FALLBACK_REPLY;
             }
 
-            setMessages((prev) => [...prev, { role: 'assistant', text: reply }]);
+            setReply(responseText);
         } catch {
-            setMessages((prev) => [...prev, { role: 'assistant', text: FALLBACK_REPLY }]);
+            setReply(FALLBACK_REPLY);
         } finally {
             setIsSending(false);
         }
@@ -57,34 +52,30 @@ export const Healing = () => {
         e.preventDefault();
         if (!inputText.trim()) return;
         sendMessage(inputText.trim());
-        setInputText('');
+        setInputText(''); // 送信時にテキストをクリア
     };
 
     return (
-        <section>
-            <div className="sec-title">今日、うまくいかなかったことを話してください</div>
+        <div className="widget-box" style={{ borderRadius: '20px' }}>
+            <div className="widget-header">
+                <h3 className="widget-title">夜の吐き出し</h3>
+                <span className="pill">ヒーリング</span>
+            </div>
 
             <p className="widget-note" style={{ marginBottom: '1.25rem' }}>
-                テキストで話しかけてください。全肯定で受け止めます。
+                今日うまくいかなかったことを、テキストで話しかけてください。全肯定で受け止めます。
                 <br />
                 入力内容は Gemini へ送信されます。
             </p>
 
-            {/* メッセージ一覧 */}
-            <div className="healing-messages">
-                {messages.length === 0 && (
-                    <div className="healing-empty">
-                        まだ何も話されていません。
-                        <br />
-                        下の入力欄からどうぞ。
+            {/* 返答エリア（応答がある時だけ表示） */}
+            {reply && (
+                <div className="healing-messages" style={{ maxHeight: 'none', padding: '0 0 1rem' }}>
+                    <div className="healing-bubble assistant">
+                        <div className="healing-bubble-text">{reply}</div>
                     </div>
-                )}
-                {messages.map((msg, i) => (
-                    <div key={i} className={`healing-bubble ${msg.role}`}>
-                        <div className="healing-bubble-text">{msg.text}</div>
-                    </div>
-                ))}
-            </div>
+                </div>
+            )}
 
             {/* 入力フォーム */}
             <form className="healing-input-form" onSubmit={handleSubmit}>
@@ -104,6 +95,6 @@ export const Healing = () => {
                     {isSending ? '…' : '送信'}
                 </button>
             </form>
-        </section>
+        </div>
     );
 };
