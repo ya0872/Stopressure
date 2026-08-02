@@ -13,7 +13,7 @@ export function SettingsView() {
     <div className="wrap">
       <header>
         <div className="title">設定</div>
-        <div className="subtitle">ATMOSPHERE STUDIO — API キーと Google 連携</div>
+        <div className="subtitle">STOPRESSURE — API キーと Google 連携</div>
       </header>
 
       <GeminiSection />
