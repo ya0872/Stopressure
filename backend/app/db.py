@@ -60,6 +60,21 @@ CREATE TABLE IF NOT EXISTS oauth_token (
     expires_at TEXT,
     updated_at TEXT NOT NULL
 );
+
+-- 対話機能の利用回数（依存防止 / F-16、docs/design.md §4.8）。
+-- フロント側のブロックはリロードで消え、:8000 を直接叩けば迂回できるため、
+-- 強制力はここに置く。services/usage_limit.py だけがこのテーブルを触る。
+--
+-- date はローカル日付である点に注意。他テーブルはUTCで記録しているが、フェーズが
+-- 「生活時間の6時間区切り」である以上、UTCで数えると9時間ずれて深夜帯が前日に混ざる。
+CREATE TABLE IF NOT EXISTS usage_counter (
+    date       TEXT NOT NULL,      -- ローカル日付 'YYYY-MM-DD'
+    phase      INTEGER NOT NULL,   -- 0..3（0時/6時/12時/18時 起点）
+    endpoint   TEXT NOT NULL,      -- 'generate' | 'reflection'
+    count      INTEGER NOT NULL DEFAULT 0,
+    updated_at TEXT NOT NULL,
+    PRIMARY KEY (date, phase, endpoint)
+);
 """
 
 

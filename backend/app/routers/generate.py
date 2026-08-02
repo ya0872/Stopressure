@@ -13,7 +13,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from .. import settings_store as store
-from ..services import gemini
+from ..services import gemini, usage_limit
 
 router = APIRouter(prefix="/generate", tags=["generate"])
 
@@ -126,6 +126,13 @@ def generate(req: GenerateRequest) -> GenerateResponse:
     if not key:
         raise HTTPException(status_code=409, detail="Gemini APIキーが未設定です。設定画面から登録してください")
 
+    # 依存防止の遮断（docs/design.md §4.8）。Geminiを呼ぶ前に判定する。
+    # フロント側のブロックはリロードで消えるため、強制力があるのはここだけ
+    try:
+        usage_limit.ensure_available("generate")
+    except usage_limit.UsageLimitExceeded as e:
+        raise HTTPException(status_code=429, detail=e.message) from e
+
     system, prompt = build_prompt(req)
     try:
         res = gemini.generate(key, store.resolve_gemini_model(), prompt, system=system)
@@ -133,5 +140,8 @@ def generate(req: GenerateRequest) -> GenerateResponse:
         raise HTTPException(status_code=503, detail=str(e)) from e
     except gemini.GeminiCallFailed as e:
         raise HTTPException(status_code=502, detail=f"生成に失敗しました: {e}") from e
+
+    # 生成が成立してから数える。先に数えるとGemini側の障害で枠だけ失う
+    usage_limit.record("generate")
 
     return GenerateResponse(text=res.text, model=res.model, purpose=req.purpose)
