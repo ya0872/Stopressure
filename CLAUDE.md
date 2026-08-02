@@ -39,6 +39,36 @@ health-app UI pattern gets implemented by reflex.
 
 The medical disclaimer (`docs/design.md` §1.3) is a required UI element, not optional copy.
 
+## Usage limiting (F-16) — the block exists twice, but only one copy enforces
+
+Built 2026-08-02 to `docs/design.md` §4.8. Per-phase **call counts**, not the "one hour per phase"
+time window the design document described until v0.5 — a time window cannot be judged server-side
+without a session concept that reload and multiple tabs would break.
+
+`frontend/src/Dashboard.tsx`'s `useGentleBlock` is **display only**. It lives in React state, so it
+resets on reload and is bypassed entirely by hitting `:8000` directly. The enforcement is
+`backend/app/services/usage_limit.py` and nowhere else. **When a bypass shows up, fix the backend —
+tightening the frontend does not close anything.**
+
+Four rules that look like details but are the feature:
+
+- **`/reflection` never returns 429.** Past the limit it returns 200 with `LIMIT_REACHED_REPLY`,
+  saves the text, and does not call Gemini. Rejecting it would recreate the "吐き出したのに無視された"
+  experience that the fallback in `routers/reflection.py` exists to prevent. The requirement is *do
+  not run the LLM*, which this satisfies. `/generate` is the only endpoint that 429s.
+- **Count after a successful generation, never before.** Counting first means a Gemini outage
+  (502/503) burns the quota without producing anything.
+- **`GET /usage` must not return counts.** `UsageStatus` carries `count`/`limit` for the decision;
+  only `blocked` and `resets_at` may leave the process. "あと3回" is the countdown pressure §1.2
+  prohibits.
+- **Do not add viewing endpoints to `usage_limit.ENDPOINTS`.** `/atmosphere`, `/daily-plan` and
+  `/context` must work at all hours — §4.8 limits the conversational features, not the ability to
+  check your own condition.
+
+`usage_counter.date` is a **local** date while every other table records UTC. Phases are `hour // 6`
+of the user's day; counting in UTC shifts the boundary by 9 hours and folds the small hours into the
+previous day.
+
 ## Resolved: level 5 reachability (§4.2.1)
 
 Decided 2026-08-01. The final level is `max(level from energy budget, level floor from pressure

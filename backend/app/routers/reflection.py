@@ -17,7 +17,7 @@ from pydantic import BaseModel, Field
 
 from .. import settings_store as store
 from ..db import get_conn
-from ..services import gemini
+from ..services import gemini, usage_limit
 
 router = APIRouter(prefix="/reflection", tags=["reflection"])
 
@@ -35,6 +35,11 @@ FALLBACK_REPLIES = [
     "無事に一日を終えられただけで満点です。気圧がこれだけ動いた日に、それ以上は誰にもできません。",
     "できなかったのではなく、体が休むことを選んだ日です。今日を越えられたことが、そのまま成果です。",
 ]
+
+# そのフェーズの上限に達したときに返す文（依存防止 / §4.8）。
+# 上の SYSTEM_PROMPT と同じ制約（助言を含めない・100文字以内・「満点」の趣旨を含む）を
+# 満たすように書いてある。「制限」という語は使わない
+LIMIT_REACHED_REPLY = "受け取りました。今日はもう十分に言葉にできています。無事に過ごせただけで満点です。"
 
 
 class ReflectionRequest(BaseModel):
@@ -82,6 +87,14 @@ def create_reflection(req: ReflectionRequest) -> ReflectionResponse:
             detail="Gemini APIキーが未設定です。設定画面から登録してください",
         )
 
+    # 依存防止（docs/design.md §4.8）。上限に達していたらGeminiを呼ばない。
+    # ただし /generate と違い 429 では突き返さない。吐き出しは受け取って記録し、
+    # 定型の肯定を返す。門前払いすると、このファイルが避けようとしている
+    # 「吐き出したのに無視された」体験そのものになるため
+    if usage_limit.peek("reflection").blocked:
+        _save(req, LIMIT_REACHED_REPLY)
+        return ReflectionResponse(reply=LIMIT_REACHED_REPLY, model=None, fallback=True)
+
     try:
         res = gemini.generate(key, store.resolve_gemini_model(), _build_prompt(req), system=SYSTEM_PROMPT)
         reply, model, fallback = res.text, res.model, False
@@ -89,6 +102,10 @@ def create_reflection(req: ReflectionRequest) -> ReflectionResponse:
         # 通信断や安全フィルタで落ちても、ユーザーには必ず肯定を返す。
         # ここで500を返すと「吐き出したのに無視された」体験になるため握る
         reply, model, fallback = FALLBACK_REPLIES[0], None, True
+
+    # 生成が成立した回だけ数える。定型文で返した回は枠を消費させない
+    if not fallback:
+        usage_limit.record("reflection")
 
     _save(req, reply)
     return ReflectionResponse(reply=reply, model=model, fallback=fallback)

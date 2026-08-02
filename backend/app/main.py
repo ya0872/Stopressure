@@ -15,7 +15,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .db import init_db
-from .routers import atmosphere, auth_google, context, generate, plan, reflection, settings
+from .routers import atmosphere, auth_google, context, generate, plan, reflection, settings, usage
 
 # 起動ディレクトリに依存しないよう backend/.env を絶対パスで読み込む。
 load_dotenv(Path(__file__).resolve().parent.parent / ".env")
@@ -60,6 +60,7 @@ app.include_router(plan.router, prefix="/api/v1")
 app.include_router(context.router, prefix="/api/v1")
 app.include_router(generate.router, prefix="/api/v1")
 app.include_router(reflection.router, prefix="/api/v1")
+app.include_router(usage.router, prefix="/api/v1")
 
 
 @app.get("/api/v1/health")

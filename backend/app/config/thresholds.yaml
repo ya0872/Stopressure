@@ -49,3 +49,16 @@ stress_level_floor:
   - {min_stress: 75, level: 4}
   - {min_stress: 55, level: 3}
   - {min_stress: 35, level: 2}
+
+# --- 利用回数の上限（依存防止 / F-16、docs/design.md §4.8）----------------------
+# 1日を6時間ごとの4フェーズに分け、フェーズごとに対話機能を使える回数を決める。
+# 気圧の係数とは性質が違う値だが、専用ファイルを立てるほどの分量が無いため同居させている。
+#
+# 制限するのは対話機能（Geminiを呼ぶ2本）だけ。省エネ度の閲覧は常時できなければ
+# ならないので、/atmosphere・/daily-plan・/context には上限を設けない（§4.8）。
+usage_limit:
+  # 献立・ご褒美・トーン変換
+  generate:   {per_phase: 10}
+  # 夜の吐き出し。上限に達しても429では拒否せず、Geminiを呼ばずに定型文を返す。
+  # 拒否すると「吐き出したのに無視された」体験になるため（routers/reflection.py 参照）
+  reflection: {per_phase: 3}
