@@ -4,7 +4,7 @@ CON
 
 # プロダクト名
 
-Atmosphere Studio
+停気圧
 
 ## 概要
 
@@ -16,15 +16,13 @@ Atmosphere Studio
 
 外部通信は Open-Meteo / Google API / Gemini API の3系統に限定した、完全ローカル動作のアプリケーションです。
 
-## デモ
+## デモ画像
 
-
-- 発表資料URL（必須）: [kitm365-my.sharepoint.com/:p:/g/personal/c1603181_st_kanazawa-it_ac_jp/IQB8pSc9a5LfTYcgjJ47UNgiASvxVc6kV5zKtzUyz__8wV4?e=PcVbZu](https://kitm365-my.sharepoint.com/:p:/g/personal/c1603181_st_kanazawa-it_ac_jp/IQB8pSc9a5LfTYcgjJ47UNgiASvxVc6kV5zKtzUyz__8wV4?e=PcVbZu)
-- スクリーンショット:
+![1785663360794](image/README/1785663360794.png)
 
 ## システム構成
 
-![1785661894582](image/README/1785661894582.png)
+![1785663276534](image/README/1785663276534.png)
 
 ## 背景・課題
 
@@ -197,8 +195,6 @@ npm run lint
 ```
 
 ## メンバー
-
-
 
 | 名前     | 担当           |
 | -------- | -------------- |
