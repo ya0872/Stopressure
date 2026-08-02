@@ -1,25 +1,25 @@
 # 省エネレベルの呼称と表示文言（docs/design.md §4.3）
 - level: 1
-  name: 平常運転
+  name: おだやか
   headline: 今日は気圧が穏やかです。動いても、動かなくても、どちらでも正解です。
-  suggest_title: やってもやらなくてもいいこと
+  suggest_title: やれたらやること
 
 - level: 2
   name: 軽め
   headline: 少しだけ気圧が動いています。座ったままできることだけで十分です。
-  suggest_title: 座ったままできること
+  suggest_title: ふと気が向いたらやること
 
 - level: 3
   name: 省エネ
   headline: 気圧が下がっています。生きているだけで、今日は仕事をしています。
-  suggest_title: 本日の目標
+  suggest_title: やってもやらなくてもいいこと
 
 - level: 4
-  name: 深い省エネ
-  headline: 今日は気圧のせいです。休んでください。
-  suggest_title: 本日の目標
+  name: 安静に
+  headline: 今日、もし動けなくてもそれは気圧のせいです。休んでください。
+  suggest_title: やれたら自信になること
 
 - level: 5
   name: 完全休止
   headline: 気圧が急降下しています。今日は何もしないことが目標です。
-  suggest_title: 本日の目標
+  suggest_title: やれたら自信になること

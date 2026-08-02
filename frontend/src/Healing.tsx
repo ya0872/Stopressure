@@ -14,7 +14,11 @@ const API_BASE = import.meta.env.VITE_API_BASE;
 const FALLBACK_REPLY =
     '無事に一日を終えられただけで満点です。気圧がこれだけ動いた日に、それ以上は誰にもできません。';
 
-export const Healing = () => {
+interface HealingProps {
+    onInteraction?: () => void;
+}
+
+export const Healing = ({ onInteraction }: HealingProps) => {
     const [reply, setReply] = useState<string | null>(null);
     const [inputText, setInputText] = useState('');
     const [isSending, setIsSending] = useState(false);
@@ -41,8 +45,10 @@ export const Healing = () => {
             }
 
             setReply(responseText);
+            onInteraction?.();
         } catch {
             setReply(FALLBACK_REPLY);
+            onInteraction?.();
         } finally {
             setIsSending(false);
         }
