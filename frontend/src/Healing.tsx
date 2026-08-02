@@ -17,16 +17,11 @@ import { postReflection, ApiError } from './api/client';
 const FALLBACK_REPLY =
     '無事に一日を終えられただけで満点です。気圧がこれだけ動いた日に、それ以上は誰にもできません。';
 
-/**
- * 入力欄は決して塞がないこと。
- *
- * 上限に達していても /reflection は 200 で受け取り、内容を保存したうえで定型の肯定を返す
- * （docs/design.md §4.7 / §4.8）。「書くことはいつでもできる」がこの機能の前提であり、
- * 入力自体を disabled にすると、バックエンドが避けている「吐き出したのに無視された」
- * 体験をフロント側で作り直してしまう。
- * 2026-08-02 に一度 disabled にして実際に書けなくなったため、その記録として残す。
- */
-export const Healing = () => {
+interface HealingProps {
+    onInteraction?: () => void;
+}
+
+export const Healing = ({ onInteraction }: HealingProps) => {
     const [reply, setReply] = useState<string | null>(null);
     const [inputText, setInputText] = useState('');
     const [isSending, setIsSending] = useState(false);
@@ -62,7 +57,12 @@ export const Healing = () => {
             } else {
                 console.warn('[reflection] 通信に失敗しました', e);
             }
+
+            setReply(responseText);
+            onInteraction?.();
+        } catch {
             setReply(FALLBACK_REPLY);
+            onInteraction?.();
         } finally {
             setIsSending(false);
         }

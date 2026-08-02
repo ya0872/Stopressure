@@ -22,7 +22,7 @@ const NIGHT_START = 2;
 const NIGHT_END = 5;
 
 /** 1セッションあたりの対話回数上限 */
-const MAX_INTERACTIONS = 20;
+const MAX_INTERACTIONS = 5;
 
 /** 毎分チェックする間隔(ms) */
 const PHASE_CHECK_INTERVAL = 60_000;
@@ -175,9 +175,8 @@ const DashboardView = () => {
     { key: 'settings', label: '設定' },
   ];
 
-  // タブ切り替え時に対話回数を記録する
+  // タブ切り替え時は対話としてカウントしない
   const handleTabSwitch = (key: ViewName) => {
-    recordInteraction();
     setActiveView(key);
   };
 
@@ -257,7 +256,7 @@ const DashboardView = () => {
                     <span>{f.factor}</span>
                     {/* 数値を必ず併記する。棒の長さだけに情報を持たせない（§8.2） */}
                     <span className="factor-cost">
-                      −{f.cost} / 上限 {f.cap}
+                      {f.cost * -1} / 上限 {f.cap * -1}
                     </span>
                   </div>
                   <div className="factor-bar">
@@ -303,7 +302,7 @@ const DashboardView = () => {
 
         {/* ========== 夜の吐き出し ========== */}
         <div className={`view ${activeView === 'reflect' ? 'active' : ''}`} id="view-reflect">
-          <Healing />
+          <Healing onInteraction={recordInteraction} />
         </div>
 
         {/* ========== 設定 ========== */}
