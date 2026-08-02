@@ -5,15 +5,20 @@
   load: 1
   reason: 気圧も気温も落ち着いています。出かけるなら今日のような日です
 
-- id: walk
-  text: 少し外を歩く
+- id: reading
+  text: 本を読んでみる
+  load: 1
+  reason: 過ごしやすい日です。落ち着いた時間を楽しむのもいいですよ
+
+- id: outside
+  text: 少し外に出てみる
   load: 2
   reason: 気圧が安定している日は、体が動きを受け入れやすい状態です
 
 - id: tidy
   text: 机の上だけ片付ける
   load: 2
-  reason: 視界に入る範囲が整うと、それだけで思考の負荷が下がります
+  reason: 目に見える範囲が整うと、それだけで思考の負荷が下がります
 
 - id: music
   text: 好きな曲を1曲だけ聴く
